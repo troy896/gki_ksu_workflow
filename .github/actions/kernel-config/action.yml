@@ -113,6 +113,7 @@ runs:
         CONFIG_IP6_NF_TARGET_REDIRECT=y
         CONFIG_BPF_STREAM_PARSER=y
         # CONFIG_HEADERS_INSTALL is not set
+        CONFIG_NOMOUNT=y
         EOF
         
         case "${{ inputs.variant }}" in
