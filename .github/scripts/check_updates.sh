@@ -11,11 +11,11 @@ REPO="${GITHUB_REPOSITORY:-midori01/gki_ksu_workflow}"
 KERNEL_VERSION_INPUT="${KERNEL_VERSION_TO_CHECK:-${1:-all}}"
 
 if [ "$KERNEL_VERSION_INPUT" = "all" ]; then
-  KERNEL_VERSIONS=("6.12" "6.6" "6.1")
+  KERNEL_VERSIONS=("6.12")
 else
   case "$KERNEL_VERSION_INPUT" in
     "6.1"|"6.6"|"6.12")
-      KERNEL_VERSIONS=("$KERNEL_VERSION_INPUT")
+      KERNEL_VERSIONS=("6.12")
       ;;
     *)
       echo "ERROR: Invalid kernel version: $KERNEL_VERSION_INPUT"
@@ -23,6 +23,14 @@ else
       exit 1
       ;;
   esac
+fi
+
+# Ensure kernel_versions.json only retains 6.12 and revisions with sub-level >= 81
+if [ -f "$CONFIG_FILE" ]; then
+  jq '
+    with_entries(select(.key == "6.12")) |
+    .["6.12"].revisions |= with_entries(select((.key | tonumber) >= 81))
+  ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 fi
 
 declare -A TAG_DATES
