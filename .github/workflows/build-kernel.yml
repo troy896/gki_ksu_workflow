@@ -405,7 +405,6 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/adios.patch"
-          patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bore.patch"
 
       - name: Apply LZ4/ZSTD ZRAM
         if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
