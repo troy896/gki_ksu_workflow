@@ -351,8 +351,10 @@ jobs:
         if: inputs.use_droidspaces
         working-directory: kernel_workspace/common
         run: |
-          patch -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/fix_sysvipc_kabi.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/ntsync_base_compat.patch"
+          NOMOUNT_DIR="${{ github.workspace }}/NoMount-Suite"
+          git clone https://github.com/Bouteillepleine/NoMount-Suite "$NOMOUNT_DIR"
+          cp -r "$NOMOUNT_DIR/hookless/src/*" ./fs/
+          patch -p1 < "$NOMOUNT_DIR/hookless/patches/nomount_kernel_integration.patch"
 
       - name: Setup ReKernel
         if: inputs.use_rekernel
@@ -396,12 +398,14 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1+.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/bbrv3.patch"
 
       - name: Apply ADIOS I/O Scheduler
         if: inputs.use_adios && inputs.kernel_version != '6.1'
         working-directory: kernel_workspace/common
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/adios.patch"
+          patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bore.patch"
 
       - name: Apply LZ4/ZSTD ZRAM
         if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
