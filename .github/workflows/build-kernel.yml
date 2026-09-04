@@ -397,12 +397,9 @@ jobs:
       - name: Apply Unicode Bypass Fix
         working-directory: kernel_workspace/common
         run: |
-          NOMOUNT_DIR="${{ github.workspace }}/NoMount"
-          git clone https://github.com/Bouteillepleine/NoMount-Suite "$NOMOUNT_DIR"
-          cp -r "$NOMOUNT_DIR"/hookless/src/* fs/
-          patch -p1 < "$NOMOUNT_DIR/hookless/patches/nomount_kernel_integration.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1+.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3hard.patch"
+          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -
 
       - name: Apply ADIOS I/O Scheduler
         if: inputs.use_adios && inputs.kernel_version != '6.1'
