@@ -64,6 +64,12 @@ runs:
         cat >> $DEFCONFIG <<-'EOF'
         CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y
         CONFIG_LOG_BUF_SHIFT=23
+        CONFIG_NET_SCH_FQ=y
+        CONFIG_NET_SCH_CODEL=y
+        CONFIG_NET_SCH_FQ_CODEL=y
+        CONFIG_NET_SCH_INGRESS=y
+        CONFIG_NET_SCH_DEFAULT=y
+        CONFIG_DEFAULT_FQ_CODEL=y
         CONFIG_TMPFS_XATTR=y
         CONFIG_TMPFS_POSIX_ACL=y
         CONFIG_IP_NF_TARGET_TTL=y
@@ -71,6 +77,8 @@ runs:
         CONFIG_IP6_NF_MATCH_HL=y
         CONFIG_TCP_CONG_ADVANCED=y
         CONFIG_TCP_CONG_BBR=y
+        CONFIG_TCP_CONG_BBR3=y
+        CONFIG_DEFAULT_BBR3=y
         CONFIG_IP_SET=y
         CONFIG_NETFILTER_XT_SET=y
         CONFIG_IP_SET_MAX=65534
@@ -99,6 +107,8 @@ runs:
         CONFIG_IP6_NF_NAT=y
         CONFIG_IP6_NF_TARGET_REDIRECT=y
         CONFIG_BPF_STREAM_PARSER=y
+        CONFIG_ZSTD_COMPRESS=y
+        CONFIG_ZSTD_DECOMPRESS=y
         # CONFIG_HEADERS_INSTALL is not set
         EOF
         
@@ -154,13 +164,7 @@ runs:
         
         if [ "${{ inputs.use_droidspaces }}" = "true" ]; then
           cat >> $DEFCONFIG <<-'EOF'
-        CONFIG_SYSVIPC=y
-        CONFIG_POSIX_MQUEUE=y
-        CONFIG_IPC_NS=y
-        CONFIG_PID_NS=y
-        CONFIG_DEVTMPFS=y
-        CONFIG_NTSYNC=y
-        # CONFIG_ANDROID_PARANOID_NETWORK is not set
+        CONFIG_NOMOUNT=y
         EOF
         fi
         
@@ -176,6 +180,7 @@ runs:
           cat >> $DEFCONFIG <<-'EOF'
         CONFIG_MQ_IOSCHED_ADIOS=y
         CONFIG_MQ_IOSCHED_DEFAULT_ADIOS=y
+        CONFIG_SCHED_BORE=y
         EOF
         fi
 
@@ -183,6 +188,10 @@ runs:
           cat >> $DEFCONFIG <<-'EOF'
         CONFIG_ZRAM_BACKEND_LZ4=y
         CONFIG_ZRAM_BACKEND_ZSTD=y
+        CONFIG_SWAP=y
+        CONFIG_ZRAM_DEF_COMP_LZ4=y
+        CONFIG_ZRAM_WRITEBACK=y
+        CONFIG_ZRAM_MEMORY_TRACKING=y
         EOF
         fi
         
