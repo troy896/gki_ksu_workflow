@@ -69,7 +69,7 @@ sync_asset() {
   gh release upload "$tag" "$destination" --repo "$REPO" --clobber
 }
 
-for kv in 6.1 6.6 6.12; do
+for kv in 6.12; do
   config=$(jq -c ".[\"$kv\"]" "$CONFIG_FILE")
   tag=$(echo "$config" | jq -r '.mirror_tag')
   clang=$(echo "$config" | jq -r '.default_clang')

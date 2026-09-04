@@ -209,11 +209,7 @@ jobs:
           echo "release_tag=$(TZ='Asia/Tokyo' date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
           config_file=".github/config/kernel_versions.json"
 
-          if [ "${{ inputs.kernel_version }}" = "all" ]; then
-            kvs='["6.1","6.6","6.12"]'
-          else
-            kvs='["${{ inputs.kernel_version }}"]'
-          fi
+          kvs='["6.12"]'
           echo "kernel_versions=$kvs" >> $GITHUB_OUTPUT
 
           SUFFIX="-midori"
@@ -247,6 +243,7 @@ jobs:
           
           while read kv; do
             config=$(jq -c '.["'$kv'"]' "$config_file")
+            [ "$config" = "null" ] || [ -z "$config" ] && continue
             android_version=$(echo "$config" | jq -r '.android_version')
             default_sub_level=$(echo "$config" | jq -r '.default_sub_level')
             use_lts=$(echo "$config" | jq -r '.use_lts')
@@ -254,6 +251,9 @@ jobs:
             revisions=$(echo "$config" | jq -r '.revisions | keys[]')
             sub_levels_to_build=""
             for rev in $revisions; do
+              if [ "$rev" -lt 81 ]; then
+                continue
+              fi
               asb_date=$(echo "$config" | jq -r '.revisions["'$rev'"].asb_date')
               if [ "$use_lts" = "false" ] && [ "$asb_date" = "lts" ]; then
                 continue
@@ -332,6 +332,7 @@ jobs:
     needs: setup
     if: needs.setup.outputs.build_matrix != '{"include":[]}'
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.build_matrix) }}
     uses: ./.github/workflows/build-kernel.yml
     with:
