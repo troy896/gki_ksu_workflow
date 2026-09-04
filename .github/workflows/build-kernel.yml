@@ -398,7 +398,6 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1+.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3.patch"
 
       - name: Apply ADIOS I/O Scheduler
         if: inputs.use_adios && inputs.kernel_version != '6.1'
