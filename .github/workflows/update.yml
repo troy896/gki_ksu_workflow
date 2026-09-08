@@ -8,7 +8,7 @@ on:
       kernel_version:
         description: 'Kernel Version to Check'
         required: true
-        default: 'all'
+        default: '6.12'
         type: choice
         options:
           - all
@@ -20,7 +20,7 @@ on:
       kernel_version:
         required: false
         type: string
-        default: 'all'
+        default: '6.12'
 
 jobs:
   check:
