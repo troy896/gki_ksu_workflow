@@ -116,6 +116,7 @@ runs:
         CONFIG_IP6_NF_NAT=y
         CONFIG_IP6_NF_TARGET_REDIRECT=y
         CONFIG_BPF_STREAM_PARSER=y
+        CONFIG_NOMOUNT=y
         # CONFIG_HEADERS_INSTALL is not set
         EOF
         
@@ -185,13 +186,7 @@ runs:
         
         if [ "${{ inputs.use_droidspaces }}" = "true" ]; then
           cat >> $DEFCONFIG <<-'EOF'
-        CONFIG_SYSVIPC=y
-        CONFIG_POSIX_MQUEUE=y
-        CONFIG_IPC_NS=y
-        CONFIG_PID_NS=y
-        CONFIG_DEVTMPFS=y
-        CONFIG_NTSYNC=y
-        # CONFIG_ANDROID_PARANOID_NETWORK is not set
+        CONFIG_NOMOUNT=y
         EOF
         fi
         
