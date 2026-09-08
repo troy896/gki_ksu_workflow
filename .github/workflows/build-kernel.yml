@@ -391,6 +391,8 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1+.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3hard.patch"
+          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -
 
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios && inputs.kernel_version != '6.1'
