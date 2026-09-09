@@ -466,8 +466,8 @@ jobs:
         run: |
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1+.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3hard.patch"
-          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
-          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
+          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
+          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
           cd ..
           patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/abi.patch"
 
