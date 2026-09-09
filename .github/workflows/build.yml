@@ -145,7 +145,7 @@ on:
       build_timestamp:
         description: 'Spoof Build Time (Leave blank for now)'
         required: false
-        default: ''
+        default: 'Thu Jul 16 19:32:42 UTC 2026'
         type: string
       build_user_host:
         description: 'Spoof Builder (user@host)'
@@ -211,8 +211,8 @@ jobs:
           kvs='["6.12"]'
           echo "kernel_versions=$kvs" >> $GITHUB_OUTPUT
 
-          SUFFIX="-midori"
-          [ "${{ inputs.enable_susfs }}" = "true" ] && SUFFIX="${SUFFIX}-susfs"
+          SUFFIX="-android16-6-g86553c53da31-ab15878525-4k"
+          [ "${{ inputs.enable_susfs }}" = "true" ] && SUFFIX="${SUFFIX}"
           [ "${{ inputs.use_droidspaces }}" = "true" ] && SUFFIX="${SUFFIX}-droidspaces"
           echo "kernel_localversion=${{ inputs.kernel_localversion || 'SUFFIX_PLACEHOLDER' }}" | sed "s/SUFFIX_PLACEHOLDER/$SUFFIX/" >> $GITHUB_OUTPUT
 
