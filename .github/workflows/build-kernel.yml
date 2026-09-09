@@ -224,14 +224,10 @@ jobs:
           for f in *.tar.gz; do mkdir -p "${f%%.*}" && tar -xzf "$f" -C "${f%%.*}" & done
           wait
           rm -f *.tar.gz
-          rm -rf common/android/abi_gki_protected_exports_* || true
-          sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' common/BUILD.bazel || true
+          rm -r common/android/abi_gki_protected_exports_* || true
           [[ "${{ inputs.kernel_version }}" == "6.6" ]] && echo "device_find_any_child" >> common/android/abi_gki_aarch64_xiaomi || true
           sed -i 's/ -dirty//g' common/scripts/setlocalversion || true
-          sed -i '/^static const char \*key_pass;/i #ifdef USE_PKCS11_ENGINE' common/certs/extract-cert.c || true
-          sed -i '/^static const char \*key_pass;/a #endif' common/certs/extract-cert.c || true
-          sed -i 's/^\([[:space:]]*\)if (key_pass)$/\1#ifdef USE_PKCS11_ENGINE\n\1if (key_pass)/' common/certs/extract-cert.c || true
-          sed -i '/ERR(!ENGINE_ctrl_cmd_string(e, "PIN", key_pass, 0), "Set PKCS#11 PIN");/a #endif' common/certs/extract-cert.c || true
+          sed -i ':a; /#ifdef USE_PKCS11_ENGINE/{N;N;s/#ifdef USE_PKCS11_ENGINE\n\(.*\)\n#endif/\1/; ta}' common/certs/extract-cert.c || true
 
       - name: Build and Install Pahole
         run: |
@@ -466,10 +462,10 @@ jobs:
         run: |
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1+.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3hard.patch"
-          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
-          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
+          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
+          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
           cd ..
-          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/abi.patch"
+          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/abi.patch"
 
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios && inputs.kernel_version != '6.1'
