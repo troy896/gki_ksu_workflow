@@ -476,6 +476,7 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/adios.patch"
+          patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bore_6.12.patch"
           curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
