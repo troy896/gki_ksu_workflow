@@ -62,7 +62,6 @@ runs:
       run: |
         DEFCONFIG="${{ inputs.defconfig_path }}"
 
-        sed -i '/KMI_SYMBOL_LIST_STRICT_MODE/d' "${{ inputs.build_config_path }}" || true
         sed -i '/CONFIG_LOCALVERSION/d' $DEFCONFIG
         echo "CONFIG_LOCALVERSION=\"${{ inputs.localversion }}\"" >> $DEFCONFIG
         
@@ -122,8 +121,6 @@ runs:
         CONFIG_IP6_NF_TARGET_REDIRECT=y
         CONFIG_BPF_STREAM_PARSER=y
         CONFIG_NOMOUNT=y
-        CONFIG_SECTION_MISMATCH_WARN_ONLY=y
-        CONFIG_MODULE_SIG=n
         CONFIG_SCHED_BORE=y
         # CONFIG_HEADERS_INSTALL is not set
         EOF
