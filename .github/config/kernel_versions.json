@@ -13,15 +13,6 @@
         ],
         "commit": "22e6fa8430bffa2fc3985cfdacfe122220f650fa",
         "commit_date": "2026-09-08 03:57:08 -0700"
-      },
-      "92": {
-        "asb_date": "lts",
-        "default_r": "r00",
-        "supported_r": [
-          "r00"
-        ],
-        "commit": "88745071d321b99ae785efdca49c1e4d972fb6df",
-        "commit_date": "2026-08-27 06:07:31 -0700"
       }
     },
     "default_clang": "r536225",
