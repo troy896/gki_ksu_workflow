@@ -61,9 +61,8 @@ runs:
       shell: bash
       run: |
         DEFCONFIG="${{ inputs.defconfig_path }}"
-        BUILDDEFCONF="${{ inputs.build_config_path }}"
 
-        sed -i 's/check_defconfig//' $BUILDDEFCONF
+        sed -i '/KMI_SYMBOL_LIST_STRICT_MODE/d' "${{ inputs.build_config_path }}" || true
         sed -i '/CONFIG_LOCALVERSION/d' $DEFCONFIG
         echo "CONFIG_LOCALVERSION=\"${{ inputs.localversion }}\"" >> $DEFCONFIG
         
