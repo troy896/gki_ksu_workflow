@@ -858,7 +858,6 @@ index 4d97065..95aad74 100644
 +static const unsigned int nsecs_per_tick       = 1000000000ULL / HZ;
 +unsigned int sysctl_sched_min_base_slice       = CONFIG_MIN_BASE_SLICE_NS;
 +unsigned int sysctl_sched_base_slice           = nsecs_per_tick;
-+static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;
 +#else // !CONFIG_SCHED_BORE
  unsigned int sysctl_sched_base_slice			= 700000ULL;
 -EXPORT_SYMBOL_GPL(sysctl_sched_base_slice);
@@ -867,6 +866,7 @@ index 4d97065..95aad74 100644
 +EXPORT_SYMBOL_GPL(sysctl_sched_base_slice);
  
  /*
+  * After fork, child runs first. If set to 0 (default) then
 @@ -223,6 +238,13 @@ static inline void update_load_set(struct load_weight *lw, unsigned long w)
   *
   * This idea comes from the SD scheduler of Con Kolivas:
