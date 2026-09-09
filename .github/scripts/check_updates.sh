@@ -25,11 +25,11 @@ else
   esac
 fi
 
-# Ensure kernel_versions.json only retains 6.12 and revisions with sub-level >= 81
+# Ensure kernel_versions.json only retains 6.12 and revisions with sub-level == 81
 if [ -f "$CONFIG_FILE" ]; then
   jq '
     with_entries(select(.key == "6.12")) |
-    .["6.12"].revisions |= with_entries(select((.key | tonumber) >= 81))
+    .["6.12"].revisions |= with_entries(select((.key | tonumber) == 81))
   ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 fi
 
