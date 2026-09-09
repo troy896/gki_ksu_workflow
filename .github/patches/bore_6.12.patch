@@ -404,7 +404,7 @@ index 0000000..3d97526
 +		cnt++;
 +		sum += se_bore(&child->se)->burst_penalty;
 +	}
-
++
 +	if (se_bore(&p->se))
 +		update_burst_cache(&se_bore(&p->se)->child_burst, p, cnt, sum, now);
 +}
