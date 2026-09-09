@@ -3,11 +3,11 @@ Subject: [PATCH] sched: BORE 5.9.6 for android16-6.12, KMI-safe (Rust-bindgen cl
 
 BORE 5.9.6 (EEVDF) on GKI android16-6.12. sched_entity is left 100% STOCK: the
 per-entity BORE pointer is stored in the existing reserved u64 slot via the
-se_bore() lvalue macro in the private include/linux/sched/bore.h. 6.12 computes
+se_bore() lvalue macro in the private include/linux/sched/bore.h[span_1](start_span)[span_1](end_span). 6.12 computes
 CRCs with gendwarfksyms (DWARF-based), which sees through ANDROID_KABI_USE, so
 consuming a reserve slot with a typed member churns every task_struct-referencing
-CRC (~11k) incl. the Rust bindings_raw crate. Keeping sched_entity's DWARF byte-
-identical -> 0 CRC. CONFIG_SCHED_BORE=y.
+CRC (~11k) incl[span_2](start_span)[span_2](end_span). the Rust bindings_raw crate[span_3](start_span)[span_3](end_span). Keeping sched_entity's DWARF byte-
+identical -> 0 CRC[span_4](start_span)[span_4](end_span). CONFIG_SCHED_BORE=y[span_5](start_span)[span_5](end_span).
 
 diff --git a/include/linux/sched/bore.h b/include/linux/sched/bore.h
 new file mode 100644
@@ -404,7 +404,7 @@ index 0000000..3d97526
 +		cnt++;
 +		sum += se_bore(&child->se)->burst_penalty;
 +	}
-+
+
 +	if (se_bore(&p->se))
 +		update_burst_cache(&se_bore(&p->se)->child_burst, p, cnt, sum, now);
 +}
@@ -864,7 +864,7 @@ index 4d97065..95aad74 100644
 -EXPORT_SYMBOL_GPL(sysctl_sched_base_slice);
  static unsigned int normalized_sysctl_sched_base_slice	= 700000ULL;
 +#endif // CONFIG_SCHED_BORE
-+EXPORT_SYMBOL_GPL(sysctl_sched_base_slice);
+ EXPORT_SYMBOL_GPL(sysctl_sched_base_slice);
  
  /*
   * After fork, child runs first. If set to 0 (default) then
