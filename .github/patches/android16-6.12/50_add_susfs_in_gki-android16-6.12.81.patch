@@ -1393,21 +1393,7 @@ index 365c5cf966bc..866b51942212 100644
  	}
  
  	start = vma->vm_start;
-@@ -1343,6 +1385,13 @@ static int show_smap(struct seq_file *m, void *v)
- 	struct vm_area_struct *vma = v;
- 	struct mem_size_stats mss = {};
- 
-+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+	if (vma->vm_file) {
-+		if (SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
-+			return 0;
-+	}
-+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+
- 	if (!vma_data_pages(vma))
- 		goto show_pad;
- 
-@@ -1403,7 +1452,14 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
+@@ -1403,7 +1445,14 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
  
  	vma_start = vma->vm_start;
  	do {
@@ -1422,7 +1408,7 @@ index 365c5cf966bc..866b51942212 100644
  		last_vma_end = vma->vm_end;
  
  		/*
-@@ -1476,8 +1532,15 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
+@@ -1476,8 +1525,15 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
  
  			/* Case 4 above */
  			if (vma->vm_end > last_vma_end) {
@@ -1438,7 +1424,7 @@ index 365c5cf966bc..866b51942212 100644
  			}
  		}
  	} for_each_vma(vmi, vma);
-@@ -2268,6 +2331,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -2268,6 +2324,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  	while (count && (start_vaddr < end_vaddr)) {
  		int len;
  		unsigned long end;
@@ -1448,7 +1434,7 @@ index 365c5cf966bc..866b51942212 100644
  
  		pm.pos = 0;
  		end = (start_vaddr + PAGEMAP_WALK_SIZE) & PAGEMAP_WALK_MASK;
-@@ -2277,7 +2343,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -2277,7 +2336,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  		ret = mmap_read_lock_killable(mm);
  		if (ret)
  			goto out_free;
