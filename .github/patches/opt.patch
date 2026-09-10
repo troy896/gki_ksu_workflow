@@ -1,0 +1,719 @@
+From 80670604677ab0e6d304bff123a08477057e0bc5 Mon Sep 17 00:00:00 2001
+From: Ahmed Al-Nassif <mr.ahmed.nassif@gmail.com>
+Date: Mon, 22 Jun 2026 23:03:43 +0300
+Subject: [PATCH 17/24] arm64: Align clear_page() to 16 bytes
+
+    With automatic zeroing of pages upon allocation enabled, time spent in
+    clear_page() is significant according to perf top. Since clear_page() is
+    used in loops, align it to 16 bytes, which significantly reduces CPU time
+    spent in clear_page()
+
+    Signed-off-by: Sultan Alsawaf <sultan@kerneltoast.com>
+
+Signed-off-by: Ahmed Al-Nassif <mr.ahmed.nassif@gmail.com>
+---
+ arch/arm64/lib/clear_page.S | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/lib/clear_page.S b/arch/arm64/lib/clear_page.S
+index ebde40e7f..cfbbdead5 100644
+--- a/arch/arm64/lib/clear_page.S
++++ b/arch/arm64/lib/clear_page.S
+@@ -14,6 +14,7 @@
+  * Parameters:
+  *	x0 - dest
+  */
++	.p2align 4
+ SYM_FUNC_START(__pi_clear_page)
+ 	mrs	x1, dczid_el0
+ 	tbnz	x1, #4, 2f	/* Branch if DC ZVA is prohibited */
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index d39deceb0..458904c0d 100644
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -6921,7 +6921,7 @@ select_idle_capacity(struct task_struct *p, struct sched_domain *sd, int target)
+ 	util_min = uclamp_eff_value(p, UCLAMP_MIN);
+ 	util_max = uclamp_eff_value(p, UCLAMP_MAX);
+ 
+-	for_each_cpu_wrap(cpu, cpus, target) {
++	for_each_cpu_wrap(cpu, cpus, target + 1) {
+ 		unsigned long cpu_cap = capacity_of(cpu);
+ 
+ 		if (!available_idle_cpu(cpu) && !sched_idle_cpu(cpu))
+diff --git a/lib/string.c b/lib/string.c
+index c4b8349ff..2b57d3615 100644
+--- a/lib/string.c
++++ b/lib/string.c
+@@ -29,6 +29,23 @@
+ #include <asm/word-at-a-time.h>
+ #include <asm/page.h>
+ 
++#define BYTES_LONG	sizeof(long)
++#define WORD_MASK	(BYTES_LONG - 1)
++#define MIN_THRESHOLD	(BYTES_LONG * 2)
++
++/* convenience union to avoid cast between different pointer types */
++union types {
++	u8 *as_u8;
++	unsigned long *as_ulong;
++	uintptr_t as_uptr;
++};
++
++union const_types {
++	const u8 *as_u8;
++	const unsigned long *as_ulong;
++	uintptr_t as_uptr;
++};
++
+ #ifndef __HAVE_ARCH_STRNCASECMP
+ /**
+  * strncasecmp - Case insensitive, length-limited string comparison
+@@ -622,10 +639,38 @@ EXPORT_SYMBOL(strsep);
+  */
+ void *memset(void *s, int c, size_t count)
+ {
+-	char *xs = s;
++	union types dest = { .as_u8 = s };
++
++	if (count >= MIN_THRESHOLD) {
++		unsigned long cu = (unsigned long)c;
+ 
++		/* Compose an ulong with 'c' repeated 4/8 times */
++#ifdef CONFIG_ARCH_HAS_FAST_MULTIPLIER
++		cu *= 0x0101010101010101UL;
++#else
++		cu |= cu << 8;
++		cu |= cu << 16;
++		/* Suppress warning on 32 bit machines */
++		cu |= (cu << 16) << 16;
++#endif
++		if (!IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)) {
++			/*
++			 * Fill the buffer one byte at time until
++			 * the destination is word aligned.
++			 */
++			for (; count && dest.as_uptr & WORD_MASK; count--)
++				*dest.as_u8++ = c;
++		}
++
++		/* Copy using the largest size allowed */
++		for (; count >= BYTES_LONG; count -= BYTES_LONG)
++			*dest.as_ulong++ = cu;
++	}
++
++	/* copy the remainder */
+ 	while (count--)
+-		*xs++ = c;
++		*dest.as_u8++ = c;
++
+ 	return s;
+ }
+ EXPORT_SYMBOL(memset);
+@@ -698,6 +743,13 @@ EXPORT_SYMBOL(memset64);
+ #endif
+ 
+ #ifndef __HAVE_ARCH_MEMCPY
++
++#ifdef __BIG_ENDIAN
++#define MERGE_UL(h, l, d) ((h) << ((d) * 8) | (l) >> ((BYTES_LONG - (d)) * 8))
++#else
++#define MERGE_UL(h, l, d) ((h) >> ((d) * 8) | (l) << ((BYTES_LONG - (d)) * 8))
++#endif
++
+ /**
+  * memcpy - Copy one area of memory to another
+  * @dest: Where to copy to
+@@ -709,14 +761,64 @@ EXPORT_SYMBOL(memset64);
+  */
+ void *memcpy(void *dest, const void *src, size_t count)
+ {
+-	char *tmp = dest;
+-	const char *s = src;
++	union const_types s = { .as_u8 = src };
++	union types d = { .as_u8 = dest };
++	int distance = 0;
++
++	if (!IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)) {
++		if (count < MIN_THRESHOLD)
++			goto copy_remainder;
+ 
++		/* Copy a byte at time until destination is aligned. */
++		for (; d.as_uptr & WORD_MASK; count--)
++			*d.as_u8++ = *s.as_u8++;
++
++		distance = s.as_uptr & WORD_MASK;
++	}
++
++	if (distance) {
++		unsigned long last, next;
++
++		/*
++		 * s is distance bytes ahead of d, and d just reached
++		 * the alignment boundary. Move s backward to word align it
++		 * and shift data to compensate for distance, in order to do
++		 * word-by-word copy.
++		 */
++		s.as_u8 -= distance;
++
++		next = s.as_ulong[0];
++		for (; count >= BYTES_LONG; count -= BYTES_LONG) {
++			last = next;
++			next = s.as_ulong[1];
++
++			d.as_ulong[0] = MERGE_UL(last, next, distance);
++
++			d.as_ulong++;
++			s.as_ulong++;
++		}
++
++		/* Restore s with the original offset. */
++		s.as_u8 += distance;
++	} else {
++		/*
++		 * If the source and dest lower bits are the same, do a simple
++		 * 32/64 bit wide copy.
++		 */
++		for (; count >= BYTES_LONG; count -= BYTES_LONG)
++			*d.as_ulong++ = *s.as_ulong++;
++	}
++
++copy_remainder:
+ 	while (count--)
+-		*tmp++ = *s++;
++		*d.as_u8++ = *s.as_u8++;
++
+ 	return dest;
+ }
+ EXPORT_SYMBOL(memcpy);
++
++#undef MERGE_UL
++
+ #endif
+ 
+ #ifndef __HAVE_ARCH_MEMMOVE
+@@ -730,19 +832,13 @@ EXPORT_SYMBOL(memcpy);
+  */
+ void *memmove(void *dest, const void *src, size_t count)
+ {
+-	char *tmp;
+-	const char *s;
++	if (dest < src || src + count <= dest)
++		return memcpy(dest, src, count);
++
++	if (dest > src) {
++		const char *s = src + count;
++		char *tmp = dest + count;
+ 
+-	if (dest <= src) {
+-		tmp = dest;
+-		s = src;
+-		while (count--)
+-			*tmp++ = *s++;
+-	} else {
+-		tmp = dest;
+-		tmp += count;
+-		s = src;
+-		s += count;
+ 		while (count--)
+ 			*--tmp = *--s;
+ 	}
+diff --git a/kernel/irq/cpuhotplug.c b/kernel/irq/cpuhotplug.c
+index eb8628390..5080534bf 100644
+--- a/kernel/irq/cpuhotplug.c
++++ b/kernel/irq/cpuhotplug.c
+@@ -147,7 +147,7 @@ static bool migrate_one_irq(struct irq_desc *desc)
+ 	}
+ 
+ 	if (err) {
+-		pr_warn_ratelimited("IRQ%u: set affinity failed(%d).\n",
++		pr_debug_ratelimited("IRQ%u: set affinity failed(%d).\n",
+ 				    d->irq, err);
+ 		brokeaff = false;
+ 	}
+diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
+index 7088c5ac5..38c123314 100644
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -711,6 +711,12 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
+ 		}
+ 	}
+ 
++	if ((strstr(line, "healthd")) || (strstr(line, "logd")) ||
++		 strstr(line, "dashd")) {
++		kfree(buf);
++		return len;
++	}
++
+ 	devkmsg_emit(facility, level, "%s", line);
+ 	kfree(buf);
+ 	return ret;
+diff --git a/include/net/sock.h b/include/net/sock.h
+index 2e248dc46..28733b0c7 100644
+--- a/include/net/sock.h
++++ b/include/net/sock.h
+@@ -3042,7 +3042,7 @@ void sk_get_meminfo(const struct sock *sk, u32 *meminfo);
+  * platforms.  This makes socket queueing behavior and performance
+  * not depend upon such differences.
+  */
+-#define _SK_MEM_PACKETS		256
++#define _SK_MEM_PACKETS		1024
+ #define _SK_MEM_OVERHEAD	SKB_TRUESIZE(256)
+ #define SK_WMEM_MAX		(_SK_MEM_OVERHEAD * _SK_MEM_PACKETS)
+ #define SK_RMEM_MAX		(_SK_MEM_OVERHEAD * _SK_MEM_PACKETS)
+diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
+index 217271324..dca7aaa16 100644
+--- a/kernel/time/alarmtimer.c
++++ b/kernel/time/alarmtimer.c
+@@ -281,7 +281,7 @@ static int alarmtimer_suspend(struct device *dev)
+ 		return 0;
+ 
+ 	if (ktime_to_ns(min) < 2 * NSEC_PER_SEC) {
+-		pm_wakeup_event(dev, 2 * MSEC_PER_SEC);
++		pm_wakeup_event(dev, ktime_to_ms(min) + 1);
+ 		return -EBUSY;
+ 	}
+ 
+diff --git a/arch/arm64/lib/memcmp.S b/arch/arm64/lib/memcmp.S
+index a5ccf2c55..997cc53c3 100644
+--- a/arch/arm64/lib/memcmp.S
++++ b/arch/arm64/lib/memcmp.S
+@@ -3,7 +3,7 @@
+  * Copyright (c) 2013-2021, Arm Limited.
+  *
+  * Adapted from the original at:
+- * https://github.com/ARM-software/optimized-routines/blob/e823e3abf5f89ecb/string/aarch64/memcmp.S
++ * https://github.com/ARM-software/optimized-routines/blob/7a9fd1603e/string/aarch64/memcmp.S
+  */
+ 
+ #include <linux/linkage.h>
+@@ -16,90 +16,70 @@
+ 
+ #define L(label) .L ## label
+ 
+-/* Parameters and result.  */
+-#define src1		x0
+-#define src2		x1
+-#define limit		x2
+-#define result		w0
+-
+-/* Internal variables.  */
+-#define data1		x3
+-#define data1w		w3
+-#define data1h		x4
+-#define data2		x5
+-#define data2w		w5
+-#define data2h		x6
+-#define tmp1		x7
+-#define tmp2		x8
++#define src1	x0
++#define src2	x1
++#define limit	x2
++#define result	w0
++
++#define data1	x3
++#define data1w	w3
++#define data2	x4
++#define data2w	w4
++#define data3	x5
++#define data3w	w5
++#define data4	x6
++#define data4w	w6
++#define tmp	x6
++#define src1end	x7
++#define src2end	x8
+ 
+ SYM_FUNC_START(__pi_memcmp)
+-	subs	limit, limit, 8
+-	b.lo	L(less8)
+ 
+-	ldr	data1, [src1], 8
+-	ldr	data2, [src2], 8
+-	cmp	data1, data2
+-	b.ne	L(return)
+-
+-	subs	limit, limit, 8
+-	b.gt	L(more16)
+-
+-	ldr	data1, [src1, limit]
+-	ldr	data2, [src2, limit]
+-	b	L(return)
+-
+-L(more16):
+-	ldr	data1, [src1], 8
+-	ldr	data2, [src2], 8
+-	cmp	data1, data2
+-	bne	L(return)
+-
+-	/* Jump directly to comparing the last 16 bytes for 32 byte (or less)
+-	   strings.  */
+-	subs	limit, limit, 16
++	cmp	limit, 16
++	b.lo	L(less16)
++	ldp	data1, data3, [src1]
++	ldp	data2, data4, [src2]
++	ccmp	data1, data2, 0, ne
++	ccmp	data3, data4, 0, eq
++	b.ne	L(return2)
++
++	add	src1end, src1, limit
++	add	src2end, src2, limit
++	cmp	limit, 32
+ 	b.ls	L(last_bytes)
++	cmp	limit, 160
++	b.hs	L(loop_align)
++	sub	limit, limit, 32
+ 
+-	/* We overlap loads between 0-32 bytes at either side of SRC1 when we
+-	   try to align, so limit it only to strings larger than 128 bytes.  */
+-	cmp	limit, 96
+-	b.ls	L(loop16)
+-
+-	/* Align src1 and adjust src2 with bytes not yet done.  */
+-	and	tmp1, src1, 15
+-	add	limit, limit, tmp1
+-	sub	src1, src1, tmp1
+-	sub	src2, src2, tmp1
+-
+-	/* Loop performing 16 bytes per iteration using aligned src1.
+-	   Limit is pre-decremented by 16 and must be larger than zero.
+-	   Exit if <= 16 bytes left to do or if the data is not equal.  */
+ 	.p2align 4
+-L(loop16):
+-	ldp	data1, data1h, [src1], 16
+-	ldp	data2, data2h, [src2], 16
+-	subs	limit, limit, 16
+-	ccmp	data1, data2, 0, hi
+-	ccmp	data1h, data2h, 0, eq
+-	b.eq	L(loop16)
+-
++L(loop32):
++	ldp	data1, data3, [src1, 16]
++	ldp	data2, data4, [src2, 16]
+ 	cmp	data1, data2
+-	bne	L(return)
+-	mov	data1, data1h
+-	mov	data2, data2h
++	ccmp	data3, data4, 0, eq
++	b.ne	L(return2)
++	cmp	limit, 16
++	b.ls	L(last_bytes)
++
++	ldp	data1, data3, [src1, 32]
++	ldp	data2, data4, [src2, 32]
+ 	cmp	data1, data2
+-	bne	L(return)
++	ccmp	data3, data4, 0, eq
++	b.ne	L(return2)
++	add	src1, src1, 32
++	add	src2, src2, 32
++L(last64):
++	subs	limit, limit, 32
++	b.hi	L(loop32)
+ 
+ 	/* Compare last 1-16 bytes using unaligned access.  */
+ L(last_bytes):
+-	add	src1, src1, limit
+-	add	src2, src2, limit
+-	ldp	data1, data1h, [src1]
+-	ldp	data2, data2h, [src2]
+-	cmp	data1, data2
+-	bne	L(return)
+-	mov	data1, data1h
+-	mov	data2, data2h
++	ldp	data1, data3, [src1end, -16]
++	ldp	data2, data4, [src2end, -16]
++L(return2):
+ 	cmp	data1, data2
++	csel	data1, data1, data3, ne
++	csel	data2, data2, data4, ne
+ 
+ 	/* Compare data bytes and set return value to 0, -1 or 1.  */
+ L(return):
+@@ -108,31 +88,104 @@ L(return):
+ 	rev	data2, data2
+ #endif
+ 	cmp	data1, data2
+-L(ret_eq):
+ 	cset	result, ne
+ 	cneg	result, result, lo
+ 	ret
+ 
+ 	.p2align 4
+-	/* Compare up to 8 bytes.  Limit is [-8..-1].  */
++L(less16):
++	add	src1end, src1, limit
++	add	src2end, src2, limit
++	tbz	limit, 3, L(less8)
++	ldr	data1, [src1]
++	ldr	data2, [src2]
++	ldr	data3, [src1end, -8]
++	ldr	data4, [src2end, -8]
++	b	L(return2)
++
++	.p2align 4
+ L(less8):
+-	adds	limit, limit, 4
+-	b.lo	L(less4)
+-	ldr	data1w, [src1], 4
+-	ldr	data2w, [src2], 4
++	tbz	limit, 2, L(less4)
++	ldr	data1w, [src1]
++	ldr	data2w, [src2]
++	ldr	data3w, [src1end, -4]
++	ldr	data4w, [src2end, -4]
++	b	L(return2)
++
++L(less4):
++	tbz	limit, 1, L(less2)
++	ldrh	data1w, [src1]
++	ldrh	data2w, [src2]
+ 	cmp	data1w, data2w
+ 	b.ne	L(return)
+-	sub	limit, limit, 4
+-L(less4):
+-	adds	limit, limit, 4
+-	beq	L(ret_eq)
+-L(byte_loop):
+-	ldrb	data1w, [src1], 1
+-	ldrb	data2w, [src2], 1
+-	subs	limit, limit, 1
+-	ccmp	data1w, data2w, 0, ne	/* NZCV = 0b0000.  */
+-	b.eq	L(byte_loop)
++L(less2):
++	mov	result, 0
++	tbz	limit, 0, L(return_zero)
++	ldrb	data1w, [src1end, -1]
++	ldrb	data2w, [src2end, -1]
+ 	sub	result, data1w, data2w
++L(return_zero):
++	ret
++
++L(loop_align):
++	ldp	data1, data3, [src1, 16]
++	ldp	data2, data4, [src2, 16]
++	cmp	data1, data2
++	ccmp	data3, data4, 0, eq
++	b.ne	L(return2)
++
++	/* Align src2 and adjust src1, src2 and limit.  */
++	and	tmp, src2, 15
++	sub	tmp, tmp, 16
++	sub	src2, src2, tmp
++	add	limit, limit, tmp
++	sub	src1, src1, tmp
++	sub	limit, limit, 64 + 16
++
++	.p2align 4
++L(loop64):
++	ldr	q0, [src1, 16]
++	ldr	q1, [src2, 16]
++	subs	limit, limit, 64
++	ldr	q2, [src1, 32]
++	ldr	q3, [src2, 32]
++	eor	v0.16b, v0.16b, v1.16b
++	eor	v1.16b, v2.16b, v3.16b
++	ldr	q2, [src1, 48]
++	ldr	q3, [src2, 48]
++	umaxp	v0.16b, v0.16b, v1.16b
++	ldr	q4, [src1, 64]!
++	ldr	q5, [src2, 64]!
++	eor	v1.16b, v2.16b, v3.16b
++	eor	v2.16b, v4.16b, v5.16b
++	umaxp	v1.16b, v1.16b, v2.16b
++	umaxp	v0.16b, v0.16b, v1.16b
++	umaxp	v0.16b, v0.16b, v0.16b
++	fmov	tmp, d0
++	ccmp	tmp, 0, 0, hi
++	b.eq	L(loop64)
++
++	/* If equal, process last 1-64 bytes using scalar loop.  */
++	add	limit, limit, 64 + 16
++	cbz	tmp, L(last64)
++
++	/* Determine the 8-byte aligned offset of the first difference.  */
++#ifdef __AARCH64EB__
++	rev16	tmp, tmp
++#endif
++	rev	tmp, tmp
++	clz	tmp, tmp
++	bic	tmp, tmp, 7
++	sub	tmp, tmp, 48
++	ldr	data1, [src1, tmp]
++	ldr	data2, [src2, tmp]
++#ifndef __AARCH64EB__
++	rev	data1, data1
++	rev	data2, data2
++#endif
++	mov	result, 1
++	cmp	data1, data2
++	cneg	result, result, lo
+ 	ret
+ SYM_FUNC_END(__pi_memcmp)
+ SYM_FUNC_ALIAS_WEAK(memcmp, __pi_memcmp)
+diff --git a/arch/arm64/lib/copy_template.S b/arch/arm64/lib/copy_template.S
+index 488df234c..427935ae6 100644
+--- a/arch/arm64/lib/copy_template.S
++++ b/arch/arm64/lib/copy_template.S
+@@ -39,6 +39,7 @@ C_h	.req	x12
+ D_l	.req	x13
+ D_h	.req	x14
+ 
++	prfm    pldl1strm, [src, #(1*L1_CACHE_BYTES)]
+ 	mov	dst, dstin
+ 	cmp	count, #16
+ 	/*When memory length is less than 16, the accessed are not aligned.*/
+@@ -169,6 +170,7 @@ D_h	.req	x14
+ 	ldp1	C_l, C_h, src, #16
+ 	stp1	D_l, D_h, dst, #16
+ 	ldp1	D_l, D_h, src, #16
++	prfm    pldl1strm, [src, #(4*L1_CACHE_BYTES)]
+ 	subs	count, count, #64
+ 	b.ge	1b
+ 	stp1	A_l, A_h, dst, #16
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 3208ff5bf..d6dde9a06 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -71,7 +71,7 @@
+  * If no ancestor relationship:
+  * arbitrary, since it's serialized on rename_lock
+  */
+-int sysctl_vfs_cache_pressure __read_mostly = 100;
++int sysctl_vfs_cache_pressure __read_mostly = 50;
+ EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
+ 
+ __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);
+diff --git a/lib/math/int_sqrt.c b/lib/math/int_sqrt.c
+index a8170bb91..cead8de06 100644
+--- a/lib/math/int_sqrt.c
++++ b/lib/math/int_sqrt.c
+@@ -17,26 +17,34 @@
+  *
+  * Computes: floor(sqrt(x))
+  */
+-unsigned long int_sqrt(unsigned long x)
++inline unsigned long int_sqrt(unsigned long x)
+ {
+-	unsigned long b, m, y = 0;
++	register unsigned long tmp;
++	register unsigned long place;
++	register unsigned long root = 0;
+ 
+ 	if (x <= 1)
+ 		return x;
+ 
+-	m = 1UL << (__fls(x) & ~1UL);
+-	while (m != 0) {
+-		b = y + m;
+-		y >>= 1;
++	place = 1UL << (BITS_PER_LONG - 2);
+ 
+-		if (x >= b) {
+-			x -= b;
+-			y += m;
++	do{
++		place >>= 2;
++	}while(place > x);
++
++	do {
++		tmp = root + place;
++		root >>= 1;
++
++		if (x >= tmp)
++		{
++			x -= tmp;
++			root += place;
+ 		}
+-		m >>= 2;
+-	}
++		place >>= 2;
++	}while (place != 0);
+ 
+-	return y;
++	return root;
+ }
+ EXPORT_SYMBOL(int_sqrt);
+ 
+diff --git a/fs/f2fs/gc.h b/fs/f2fs/gc.h
+index 28a009428..f8c6201ac 100644
+--- a/fs/f2fs/gc.h
++++ b/fs/f2fs/gc.h
+@@ -10,7 +10,7 @@
+ 						 * whether IO subsystem is idle
+ 						 * or not
+ 						 */
+-#define DEF_GC_THREAD_URGENT_SLEEP_TIME	500	/* 500 ms */
++#define DEF_GC_THREAD_URGENT_SLEEP_TIME	50	/* 50 ms */
+ #define DEF_GC_THREAD_MIN_SLEEP_TIME	30000	/* milliseconds */
+ #define DEF_GC_THREAD_MAX_SLEEP_TIME	60000
+ #define DEF_GC_THREAD_NOGC_SLEEP_TIME	300000	/* wait 5 min */
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index 68b3fe6b4..3c66e2748 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -599,8 +599,8 @@ enum {
+ 
+ #define MAX_FLUSH_RETRY_COUNT	3	/* maximum flush retry count in f2fs_enable_checkpoint() */
+ 
+-/* congestion wait timeout value, default: 20ms */
+-#define	DEFAULT_IO_TIMEOUT	(msecs_to_jiffies(20))
++/* congestion wait timeout value, default: 6ms */
++#define	DEFAULT_IO_TIMEOUT	(msecs_to_jiffies(6))
+ 
+ /* maximum retry quota flush count */
+ #define DEFAULT_RETRY_QUOTA_FLUSH_COUNT		8
+diff --git a/kernel/power/main.c b/kernel/power/main.c
+index 070f2d035..7a546cf0f 100644
+--- a/kernel/power/main.c
++++ b/kernel/power/main.c
+@@ -913,6 +913,9 @@ static ssize_t pm_freeze_timeout_store(struct kobject *kobj,
+ {
+ 	unsigned long val;
+ 
++	/* Don't let anything in Android change the freeze timeout */
++	return n;
++
+ 	if (kstrtoul(buf, 10, &val))
+ 		return -EINVAL;
+ 
+diff --git a/kernel/power/process.c b/kernel/power/process.c
+index 319e4f7e4..290682666 100644
+--- a/kernel/power/process.c
++++ b/kernel/power/process.c
+@@ -25,7 +25,7 @@
+ /*
+  * Timeout for stopping processes
+  */
+-unsigned int __read_mostly freeze_timeout_msecs = 20 * MSEC_PER_SEC;
++unsigned int __read_mostly freeze_timeout_msecs = MSEC_PER_SEC;
+ 
+ static int try_to_freeze_tasks(bool user_only)
+ {
+diff --git a/fs/f2fs/segment.h b/fs/f2fs/segment.h
+index 904625112..2a3a858d0 100644
+--- a/fs/f2fs/segment.h
++++ b/fs/f2fs/segment.h
+@@ -710,7 +710,7 @@ static inline int utilization(struct f2fs_sb_info *sbi)
+  * F2FS_IPU_DISABLE - disable IPU. (=default option in LFS mode)
+  */
+ #define DEF_MIN_IPU_UTIL	70
+-#define DEF_MIN_FSYNC_BLOCKS	8
++#define DEF_MIN_FSYNC_BLOCKS	20
+ #define DEF_MIN_HOT_BLOCKS	16
+ 
+ #define SMALL_VOLUME_SEGMENTS	(16 * 512)	/* 16GB */
+diff --git a/include/linux/jbd2.h b/include/linux/jbd2.h
+index 5bf7ada75..11bfa0742 100644
+--- a/include/linux/jbd2.h
++++ b/include/linux/jbd2.h
+@@ -45,7 +45,7 @@
+ /*
+  * The default maximum commit age, in seconds.
+  */
+-#define JBD2_DEFAULT_MAX_COMMIT_AGE 5
++#define JBD2_DEFAULT_MAX_COMMIT_AGE 30
+ 
+ #ifdef CONFIG_JBD2_DEBUG
+ /*
+-- 
+2.55.0
