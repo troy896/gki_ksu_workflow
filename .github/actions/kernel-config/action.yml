@@ -125,8 +125,6 @@ runs:
         CONFIG_BPF_STREAM_PARSER=y
         CONFIG_NOMOUNT=y
         CONFIG_FRAME_WARN=0
-        CONFIG_HZ_300=y
-        CONFIG_HZ=300
         CONFIG_F2FS_FS=y
         CONFIG_F2FS_FS_XATTR=y
         CONFIG_F2FS_FS_POSIX_ACL=y
@@ -146,9 +144,6 @@ runs:
         CONFIG_PSTORE=y
         CONFIG_PSTORE_CONSOLE=y
         CONFIG_PSTORE_RAM=y
-        CONFIG_RCU_TRACE=n
-        CONFIG_LRU_GEN=y
-        CONFIG_LRU_GEN_ENABLED=y
         # CONFIG_HEADERS_INSTALL is not set
         EOF
         
