@@ -464,8 +464,8 @@ jobs:
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3hard.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
           # patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
-          cd ..
-          patch -p1 < "${{ github.workspace }}/.github/patches/abi.patch"
+          # cd ..
+          # patch -p1 < "${{ github.workspace }}/.github/patches/abi.patch"
 
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios && inputs.kernel_version != '6.1'
