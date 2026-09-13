@@ -186,7 +186,7 @@ jobs:
               branch="${{ steps.cfg.outputs.android_version }}-${{ inputs.kernel_version }}-lts"
               KERNEL_TAR="${branch}.tar.gz"
               if [ "${{ inputs.source_mirror }}" = "google" ]; then
-                KERNEL_BASE_URL="https://android.googlesource.com/kernel/common/+archive/refs/heads/${branch}"
+                KERNEL_BASE_URL="https://android.googlesource.com/kernel/common/+archive/refs/heads/"
               else
                 KERNEL_BASE_URL="$MIDORI_MIRROR"
               fi ;;
@@ -195,7 +195,7 @@ jobs:
                 branch="${{ steps.cfg.outputs.android_version }}-${{ inputs.kernel_version }}-${{ steps.cfg.outputs.asb_date }}"
                 KERNEL_TAR="${branch}.tar.gz"
                 if [ "${{ inputs.source_mirror }}" = "google" ]; then
-                  KERNEL_BASE_URL="https://android.googlesource.com/kernel/common/+archive/refs/heads/${branch}"
+                  KERNEL_BASE_URL="https://android.googlesource.com/kernel/common/+archive/refs/heads/"
                 else
                   KERNEL_BASE_URL="$MIDORI_MIRROR"
                 fi
