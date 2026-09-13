@@ -470,9 +470,6 @@ jobs:
         if: inputs.use_adios && inputs.kernel_version != '6.1'
         working-directory: kernel_workspace/common
         run: |
-          VPNHIDE_DIR="${{ github.workspace }}/VPNHide"
-          git clone https://github.com/soranerai/vpnhide_next_backend.git "$VPNHIDE_DIR"
-          bash "$VPNHIDE_DIR/kpatch/scripts/apply.sh" ${{ github.workspace }}/kernel_workspace/common android16-6.12
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/adios.patch"
           # patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/bore_6.12.patch"
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c

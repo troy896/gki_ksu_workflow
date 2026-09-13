@@ -145,7 +145,8 @@ runs:
         CONFIG_PSTORE_CONSOLE=y
         CONFIG_PSTORE_RAM=y
         # CONFIG_HEADERS_INSTALL is not set
-        CONFIG_VPNHIDE=y
+        CONFIG_HZ_300=y
+        CONFIG_HZ=300
         EOF
         
         case "${{ inputs.variant }}" in
