@@ -281,6 +281,8 @@ def process_patch(patch):
     if not body:
         return None
 
+    new_body = process_normal_file(body, target)
+    
     new_body = clean_body(new_body)
 
     if not has_real_changes(new_body):
