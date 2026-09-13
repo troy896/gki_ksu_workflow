@@ -99,6 +99,7 @@ def is_ksu_susfs_ifndef(line):
         line
     ))
 
+
 def process_normal_file(body, target):
     result = []
     i = 0
