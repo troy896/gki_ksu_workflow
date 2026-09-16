@@ -479,7 +479,7 @@ jobs:
         if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
         working-directory: kernel_workspace/common
         run: |
-          patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/lz4-1.10.0.patch"
+          # patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/lz4-1.10.0.patch"
           patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/zstd-1.5.7.patch"
 
       - name: Inject Kernel Configs
