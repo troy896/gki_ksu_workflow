@@ -85,6 +85,19 @@ index aff87d233..79f446f29 100644
  				snd_pcm_stop(substream, SNDRV_PCM_STATE_SETUP);
  				result = -EIO;
  			}
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 659b5ff09..70ef82cea 100755
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -58,7 +58,7 @@ static const unsigned freqs[] = { 400000, 300000, 200000, 100000 };
+  * performance cost, and for other reasons may not always be desired.
+  * So we allow it it to be disabled.
+  */
+-bool use_spi_crc = 1;
++bool use_spi_crc = 0;
+ module_param(use_spi_crc, bool, 0);
+ 
+ static int mmc_schedule_delayed_work(struct delayed_work *work,
 -- 
 2.55.0
 
