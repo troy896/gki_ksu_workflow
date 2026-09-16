@@ -11,15 +11,3 @@ index 53f43ac..56a6c6b 100644
  }
  
  int check_modstruct_version(const struct load_info *info,
-diff --git a/build/kernel/abi/compare_to_symbol_list b/build/kernel/abi/compare_to_symbol_list
-index ef72ceb..368f7bb 100644
---- a/build/kernel/abi/compare_to_symbol_list
-+++ b/build/kernel/abi/compare_to_symbol_list
-@@ -48,5 +48,6 @@ if [ -n "$delta" ]; then
- 	echo "$delta" | sed -n -e 's/^+/ - /p' >&2
- 	echo "Symbols missing from symbol list:" >&2
- 	echo "$delta" | sed -n -e 's/^-/ - /p' >&2
--	exit 1
-+	echo "BUT WHO CARES?" >&2
-+	exit 0
- fi
