@@ -235,7 +235,6 @@ runs:
 
         if [ "${{ inputs.use_lz4_zstd }}" = "true" ] && [ "${{ inputs.kernel_version }}" = "6.12" ]; then
           cat >> $DEFCONFIG <<-'EOF'
-        CONFIG_ZRAM_BACKEND_LZ4=y
         CONFIG_ZRAM_BACKEND_ZSTD=y
         EOF
         fi
