@@ -151,14 +151,12 @@ runs:
         # CONFIG_HZ_250 is not set
         CONFIG_LTO_CLANG_THIN=y
         # CONFIG_LTO_NONE is not set
-        CONFIG_PAGE_OWNER=n
         CONFIG_SCHED_BORE=y
         CONFIG_SCHED_BORE_BURST_SMOOTHNESS=2
         CONFIG_DRM_EXEC=y
         CONFIG_DRM_GPUVM=y
         CONFIG_SCHED_AUTOGROUP=n
         CONFIG_PREEMPT_RT=n
-        # CONFIG_ZRAM_DEF_COMP_ZSTD is not set
         CONFIG_UDP_GRO=y
         EOF
         
