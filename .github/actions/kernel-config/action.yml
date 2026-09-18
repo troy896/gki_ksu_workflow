@@ -87,8 +87,6 @@ runs:
         CONFIG_ZSTD_DECOMPRESS=y
         CONFIG_BLK_DEV_ZRAM=y
         CONFIG_ZRAM_DEF_COMP_LZ4=y
-        # CONFIG_ZRAM_WRITEBACK is not set
-        # CONFIG_ZRAM_GS_WRITEBACK is not set
         CONFIG_ZRAM_MEMORY_TRACKING=y
         CONFIG_SWAP=y
         CONFIG_ZSMALLOC=y
@@ -148,16 +146,9 @@ runs:
         CONFIG_DEBUGFS=y
         CONFIG_HZ_300=y
         CONFIG_HZ=300
-        # CONFIG_HZ_250 is not set
         CONFIG_LTO_CLANG_THIN=y
-        # CONFIG_LTO_NONE is not set
         CONFIG_SCHED_BORE=y
         CONFIG_SCHED_BORE_BURST_SMOOTHNESS=2
-        CONFIG_DRM_EXEC=y
-        CONFIG_DRM_GPUVM=y
-        CONFIG_SCHED_AUTOGROUP=n
-        CONFIG_PREEMPT_RT=n
-        CONFIG_UDP_GRO=y
         EOF
         
         case "${{ inputs.variant }}" in
