@@ -66,7 +66,7 @@ runs:
         echo "CONFIG_LOCALVERSION=\"${{ inputs.localversion }}\"" >> $DEFCONFIG
         
         cat >> $DEFCONFIG <<-'EOF'
-        CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y
+        CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y
         CONFIG_LOG_BUF_SHIFT=23
         CONFIG_TMPFS_XATTR=y
         CONFIG_TMPFS_POSIX_ACL=y
@@ -87,8 +87,8 @@ runs:
         CONFIG_ZSTD_DECOMPRESS=y
         CONFIG_BLK_DEV_ZRAM=y
         CONFIG_ZRAM_DEF_COMP_LZ4=y
-        CONFIG_ZRAM_WRITEBACK=y
-        CONFIG_ZRAM_GS_WRITEBACK=y
+        # CONFIG_ZRAM_WRITEBACK is not set
+        # CONFIG_ZRAM_GS_WRITEBACK is not set
         CONFIG_ZRAM_MEMORY_TRACKING=y
         CONFIG_SWAP=y
         CONFIG_ZSMALLOC=y
@@ -152,6 +152,14 @@ runs:
         CONFIG_LTO_CLANG_THIN=y
         # CONFIG_LTO_NONE is not set
         CONFIG_PAGE_OWNER=n
+        CONFIG_SCHED_BORE=y
+        CONFIG_SCHED_BORE_BURST_SMOOTHNESS=2
+        CONFIG_DRM_EXEC=y
+        CONFIG_DRM_GPUVM=y
+        CONFIG_SCHED_AUTOGROUP=n
+        CONFIG_PREEMPT_RT=n
+        # CONFIG_ZRAM_DEF_COMP_ZSTD is not set
+        CONFIG_UDP_GRO=y
         EOF
         
         case "${{ inputs.variant }}" in
