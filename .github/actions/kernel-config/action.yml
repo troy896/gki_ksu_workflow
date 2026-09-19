@@ -147,7 +147,6 @@ runs:
         CONFIG_HZ_300=y
         CONFIG_HZ=300
         CONFIG_SCHED_BORE=y
-        CONFIG_SCHED_BORE_BURST_SMOOTHNESS=2
         EOF
         
         case "${{ inputs.variant }}" in
