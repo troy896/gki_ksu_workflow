@@ -6,13 +6,13 @@
     "revisions": {
       "81": {
         "asb_date": "2026-06",
-        "default_r": "r29",
+        "default_r": "r30",
         "supported_r": [
-          "r29",
+          "r30",
           "none"
         ],
-        "commit": "ac82a670c788d141cb01a029c094844aec0d36bd",
-        "commit_date": "2026-09-18 09:46:26 -0700"
+        "commit": "4299a407e96371f275c3bcb7a87ab8b1950a034c",
+        "commit_date": "2026-09-24 01:19:57 -0700"
       }
     },
     "default_clang": "r536225",
