@@ -132,11 +132,6 @@ on:
         required: true
         default: true
         type: boolean
-      update_susfs_patches:
-        description: 'Sync SUSFS Patches'
-        required: false
-        default: false
-        type: boolean
       susfs_commit:
         description: 'SUSFS Commit Hash (Leave blank for latest)'
         required: false
@@ -181,14 +176,8 @@ jobs:
     uses: ./.github/workflows/update.yml
     with:
       kernel_version: ${{ inputs.kernel_version }}
-  sync_susfs:
-    if: inputs.enable_susfs && inputs.update_susfs_patches
-    uses: ./.github/workflows/sync-susfs.yml
-    with:
-      kernel_version: ${{ inputs.kernel_version }}
   setup:
-    needs: [fetch, sync_susfs]
-    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    needs: fetch
     runs-on: ubuntu-latest
     outputs:
       release_tag: ${{ steps.config.outputs.release_tag }}
