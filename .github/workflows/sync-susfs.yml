@@ -1,8 +1,6 @@
 name: Sync SUSFS Patches
 
 on:
-  schedule:
-    - cron: '0 21 * * *'
   workflow_dispatch:
     inputs:
       kernel_version:
