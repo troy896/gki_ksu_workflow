@@ -465,7 +465,7 @@ jobs:
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3hard.patch"
           # patch -p1 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
 
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios && inputs.kernel_version != '6.1'
