@@ -225,6 +225,8 @@ jobs:
           [[ "${{ inputs.kernel_version }}" == "6.6" ]] && echo "device_find_any_child" >> common/android/abi_gki_aarch64_xiaomi || true
           sed -i 's/ -dirty//g' common/scripts/setlocalversion || true
           sed -i ':a; /#ifdef USE_PKCS11_ENGINE/{N;N;s/#ifdef USE_PKCS11_ENGINE\n\(.*\)\n#endif/\1/; ta}' common/certs/extract-cert.c || true
+          sed -i '/bad_version:/,/return 0;/s/return 0;/return 1;/' common/kernel/module/version.c || true
+          sed -i '/same_magic(/,/return strcmp/s/return strcmp(amagic, bmagic) == 0;/return 1;/' common/kernel/module/version.c || true
 
       - name: Build and Install Pahole
         run: |
@@ -459,12 +461,12 @@ jobs:
       - name: Apply Unicode Bypass Fix
         working-directory: kernel_workspace/common
         run: |
-          patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1+.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1++.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/bbrv3hard.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
-          # patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
-          cd ..
-          patch -p1 < "${{ github.workspace }}/.github/patches/abi.patch"
+          # patch -p1 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
+          # cd ..
+          # patch -p1 < "${{ github.workspace }}/.github/patches/abi.patch"
 
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios && inputs.kernel_version != '6.1'
