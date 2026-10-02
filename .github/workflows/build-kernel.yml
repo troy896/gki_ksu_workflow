@@ -78,8 +78,9 @@ on:
         type: string
         default: ''
       kernel_localversion:
-        required: true
+        required: false
         type: string
+        default: ''
       build_epoch:
         required: true
         type: string
@@ -227,6 +228,7 @@ jobs:
           sed -i ':a; /#ifdef USE_PKCS11_ENGINE/{N;N;s/#ifdef USE_PKCS11_ENGINE\n\(.*\)\n#endif/\1/; ta}' common/certs/extract-cert.c || true
           sed -i '/bad_version:/,/return 0;/s/return 0;/return 1;/' common/kernel/module/version.c || true
           sed -i '/same_magic(/,/return strcmp/s/return strcmp(amagic, bmagic) == 0;/return 1;/' common/kernel/module/version.c || true
+          sed -i 's/PAGE_ALIGN(cma->mapped_size)/PAGE_ALIGN(cma->mapped_size ? cma->mapped_size : cma->max_size)/' common/drivers/virt/gunyah/vm_mgr_cma_mem.c || true
 
       - name: Build and Install Pahole
         run: |
@@ -485,6 +487,23 @@ jobs:
           patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/lz4-1.10.0.patch"
           patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/zstd-1.5.7.patch"
 
+      - name: Determine Kernel Localversion
+        id: localversion
+        working-directory: kernel_workspace/common
+        run: |
+          if [ -n "${{ inputs.kernel_localversion }}" ]; then
+            final_klv="${{ inputs.kernel_localversion }}"
+            [[ "$final_klv" == -* ]] || final_klv="-$final_klv"
+          else
+            suffix="-midori${{ inputs.use_susfs && '-sus' || '' }}${{ inputs.use_adios && inputs.kernel_version != '6.1' && '-adios' || '' }}${{ inputs.use_droidspaces && '-ds' || '' }}"
+            kmi=$(grep -m1 -h -E '^[[:space:]]*KMI_GENERATION=' build.config.constants build.config.common 2>/dev/null | grep -oP '\d+' | head -n 1)
+            final_klv="-${{ steps.cfg.outputs.android_version }}${kmi:+-$kmi}$suffix"
+          fi
+          echo "localversion=$final_klv" >> $GITHUB_OUTPUT
+          mkdir -p commit_info
+          echo "$final_klv" > commit_info/localversion
+          echo "$final_klv" > "commit_info/localversion_${{ inputs.sub_level }}"
+          
       - name: Inject Kernel Configs
         uses: ./.github/actions/kernel-config
         with:
@@ -494,7 +513,7 @@ jobs:
           sub_level: ${{ steps.cfg.outputs.sub_level }}
           variant: ${{ inputs.variant }}
           enable_susfs: ${{ inputs.use_susfs }}
-          localversion: ${{ inputs.kernel_localversion }}
+          localversion: ${{ steps.localversion.outputs.localversion }}
           use_droidspaces: ${{ inputs.use_droidspaces }}
           use_rekernel: ${{ inputs.use_rekernel }}
           use_adios: ${{ inputs.use_adios }}
