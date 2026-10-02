@@ -474,8 +474,8 @@ jobs:
         shell: bash
         env:
           NOMOUNT_REF: main
-          NOMOUNT_DIR: ${{ github.workspace }}/bnomount
-          BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/boutpatches
+          NOMOUNT_DIR: bnomount
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
           COMMON_KERNEL_FOLDER: kernel_workspace/common
           KSU_FOLDER: kernel_workspace/common/KernelSU
           KERNEL_VER: 6.12
@@ -489,8 +489,8 @@ jobs:
         shell: bash
         env:
           NOMOUNT_REF: main
-          NOMOUNT_DIR: ${{ github.workspace }}/bnomount
-          BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/boutpatches
+          NOMOUNT_DIR: bnomount
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
           COMMON_KERNEL_FOLDER: kernel_workspace/common
           KSU_FOLDER: kernel_workspace/common/KernelSU
           KERNEL_VER: 6.12
