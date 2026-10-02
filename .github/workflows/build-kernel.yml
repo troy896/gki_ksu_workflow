@@ -470,6 +470,36 @@ jobs:
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-6.12.patch"
 
+      - name: Apply NoMount (hookless) Patch
+        shell: bash
+        env:
+          NOMOUNT_REF: main
+          NOMOUNT_DIR: ${{ github.workspace }}/bnomount
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/boutpatches
+          COMMON_KERNEL_FOLDER: kernel_workspace/common
+          KSU_FOLDER: kernel_workspace/common/KernelSU
+          KERNEL_VER: 6.12
+        run: |
+          git clone https://github.com/Bouteillepleine/kernel_patches.git boutpatches
+          git clone https://github.com/Bouteillepleine/NoMount-Suite.git bnomount
+          cp "$NOMOUNT_DIR"/hookless/srs/* kernel_workspace/common/fs/
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
+  
+      - name: Record NoMount Version
+        shell: bash
+        env:
+          NOMOUNT_REF: main
+          NOMOUNT_DIR: ${{ github.workspace }}/bnomount
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/boutpatches
+          COMMON_KERNEL_FOLDER: kernel_workspace/common
+          KSU_FOLDER: kernel_workspace/common/KernelSU
+          KERNEL_VER: 6.12
+        run: |
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" pathhide
+          
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios && inputs.kernel_version != '6.1'
         working-directory: kernel_workspace/common
@@ -478,7 +508,7 @@ jobs:
           # patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/bore_6.12.patch"
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
-          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
+          # curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
