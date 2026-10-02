@@ -482,7 +482,7 @@ jobs:
         run: |
           git clone https://github.com/Bouteillepleine/kernel_patches.git boutpatches
           git clone https://github.com/Bouteillepleine/NoMount-Suite.git bnomount
-          cp "$NOMOUNT_DIR"/hookless/srs/* kernel_workspace/common/fs/
+          cp "$NOMOUNT_DIR"/hookless/src/* kernel_workspace/common/fs/
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
   
       - name: Record NoMount Version
