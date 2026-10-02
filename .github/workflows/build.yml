@@ -178,7 +178,6 @@ permissions:
 
 jobs:
   fetch:
-    if: inputs.sync_upstream
     uses: ./.github/workflows/update.yml
     with:
       kernel_version: ${{ inputs.kernel_version }}
@@ -190,12 +189,7 @@ jobs:
       kernel_version: ${{ inputs.kernel_version }}
       
   setup:
-    needs: [fetch, sync_susfs]
-    if: |
-      always() &&
-      !cancelled() &&
-      (needs.fetch.result == 'success' || needs.fetch.result == 'skipped') &&
-      (needs.sync_susfs.result == 'success' || needs.sync_susfs.result == 'skipped')
+    needs: fetch
     runs-on: ubuntu-latest
     outputs:
       release_tag: ${{ steps.config.outputs.release_tag }}
