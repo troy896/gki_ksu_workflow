@@ -148,6 +148,12 @@ runs:
         CONFIG_PSTORE_RAM=y
         # CONFIG_HEADERS_INSTALL is not set
         CONFIG_DEBUGFS=y
+        CONFIG_LOCK_DEBUGGING=n
+        CONFIG_DEBUG_MUTEXES=n
+        CONFIG_DEBUG_SPINLOCK=n
+        CONFIG_DEBUG_ATOMIC_SLEEP=n
+        CONFIG_GDB_SCRIPTS=n
+        CONFIG_OPTIMIZE_INLINING=y
         EOF
         
         case "${{ inputs.variant }}" in
