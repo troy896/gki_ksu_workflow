@@ -99,6 +99,38 @@ on:
         type: string
 
 jobs:
+  prepare_ccache:
+    name: Prepare ccache binary (download once)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download custom ccache once
+        run: |
+          set -uo pipefail
+          echo "::group::Download ccache"
+          url="https://raw.githubusercontent.com/WildKernels/kernel_patches/refs/heads/main/ccache/ccache-x86-64"
+          ok=0
+          for attempt in 1 2 3 4 5 6; do
+            if curl -LfsS --connect-timeout 30 --max-time 120 -H "User-Agent: Mozilla/5.0" "$url" -o ccache && [ -s ccache ]; then
+              ok=1; break
+            fi
+            echo "attempt $attempt failed (GitHub raw 504/throttle); backing off..."
+            sleep $(( attempt * 5 + RANDOM % 6 ))
+          done
+          if [ "$ok" = 1 ]; then
+            echo "✅ downloaded ccache once for all matrix jobs"
+          else
+            echo "::warning::custom ccache download failed; matrix jobs will fall back to the apt ccache"
+            rm -f ccache
+          fi
+          echo "::endgroup::"
+      - name: Upload ccache artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ccache-binary
+          path: ccache
+          retention-days: 1
+          if-no-files-found: warn
+          
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 300
@@ -149,6 +181,28 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             binutils python-is-python3 libssl-dev libelf-dev libdw-dev bison flex bc aria2 ccache
 
+      - name: Get prebuilt ccache (downloaded once by prepare_ccache)
+        uses: actions/download-artifact@v8
+        with:
+          name: ccache-binary
+          path: ccache-dl
+        continue-on-error: true
+
+      - name: Install ccache (ECS by cctv18, shared via artifact)
+        run: |
+          set -uo pipefail
+          echo "::group::Install ccache"
+          if [ -s ccache-dl/ccache ]; then
+            sudo cp -f ccache-dl/ccache /usr/bin/ccache
+            sudo chmod +x /usr/bin/ccache
+            echo "✅ installed custom ccache from shared artifact"
+          else
+            echo "::warning::shared ccache artifact unavailable; using apt ccache"
+          fi
+          rm -rf ccache-dl
+          echo "[DEBUG] Ccache version : $(ccache --version | head -1)"
+          echo "::endgroup::"
+          
       - name: Restore Ccache
         if: inputs.use_ccache
         id: cache-restore
@@ -231,6 +285,7 @@ jobs:
           sed -i 's/ -dirty//g' common/scripts/setlocalversion || true
           sed -i ':a; /#ifdef USE_PKCS11_ENGINE/{N;N;s/#ifdef USE_PKCS11_ENGINE\n\(.*\)\n#endif/\1/; ta}' common/certs/extract-cert.c || true
           sed -i '/bad_version:/,/return 0;/s/return 0;/return 1;/' common/kernel/module/version.c || true
+          sed -i 's/protected_modules = \[.*\]/protected_modules = []/' common/modules.bzl || true
           sed -i '/same_magic(/,/return strcmp/s/return strcmp(amagic, bmagic) == 0;/return 1;/' common/kernel/module/version.c || true
           sed -i 's/PAGE_ALIGN(cma->mapped_size)/PAGE_ALIGN(cma->mapped_size ? cma->mapped_size : cma->max_size)/' common/drivers/virt/gunyah/vm_mgr_cma_mem.c || true
 
@@ -483,39 +538,6 @@ jobs:
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android16-6.12/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-6.12.patch"
 
-      - name: Apply NoMount (hookless) Patch
-        shell: bash
-        env:
-          NOMOUNT_REF: main
-          NOMOUNT_DIR: ${{ github.workspace }}/NoMount-Suite
-          BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
-          COMMON_KERNEL_FOLDER: kernel_workspace/common
-          KSU_FOLDER: kernel_workspace/common/KernelSU
-          KERNEL_VER: 6.12
-        run: |
-          # git clone https://github.com/Bouteillepleine/kernel_patches.git boutpatches
-          git clone https://github.com/Bouteillepleine/NoMount-Suite.git 
-          cp -r NoMount-Suite/hookless/src/* kernel_workspace/common/fs/
-          # bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
-          cd kernel_workspace/common
-          patch -p1 < "${{ github.workspace }}/NoMount-Suite/hookless/patches/nomount_kernel_integration.patch"
-  
-      - name: Record NoMount Version
-        if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
-        shell: bash
-        env:
-          NOMOUNT_REF: main
-          NOMOUNT_DIR: bnomount
-          BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
-          COMMON_KERNEL_FOLDER: kernel_workspace/common
-          KSU_FOLDER: kernel_workspace/common/KernelSU
-          KERNEL_VER: 6.12
-        run: |
-          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
-          # bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
-          # bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
-          # bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" pathhide
-          
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios && inputs.kernel_version != '6.1'
         working-directory: kernel_workspace/common
@@ -524,7 +546,7 @@ jobs:
           # patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/bore_6.12.patch"
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
-          # curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
+          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
