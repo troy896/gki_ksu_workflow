@@ -196,7 +196,7 @@ jobs:
       !cancelled() &&
       (needs.fetch.result == 'success' || needs.fetch.result == 'skipped') &&
       (needs.sync_susfs.result == 'success' || needs.sync_susfs.result == 'skipped')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       release_tag: ${{ steps.config.outputs.release_tag }}
       build_matrix: ${{ steps.config.outputs.build_matrix }}
@@ -379,7 +379,7 @@ jobs:
     strategy:
       matrix:
         kv: ${{ fromJson(needs.setup.outputs.kernel_versions) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
