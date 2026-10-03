@@ -101,7 +101,7 @@ on:
 jobs:
   prepare_ccache:
     name: Prepare ccache binary (download once)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Download custom ccache once
         run: |
@@ -132,7 +132,7 @@ jobs:
           if-no-files-found: warn
           
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 300
     env:
       DS_SUFFIX: ${{ inputs.use_droidspaces && '-DS' || '' }}
@@ -550,10 +550,23 @@ jobs:
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
-        working-directory: kernel_workspace/common
         run: |
-          patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/lz4-1.10.0.patch"
-          patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/zstd-1.5.7.patch"
+          ZZH_PATCHES="${{ github.workspace }}/zzhpatches"
+          echo "升级 LZ4..."
+          git clone https://github.com/zzh20188/GKI_KernelSU_SUSFS.git zzhpatches
+          cd kernel_workspace/common
+          rm -f lib/lz4/lz4_compress.c lib/lz4/lz4_decompress.c lib/lz4/lz4defs.h lib/lz4/lz4hc_compress.c
+
+          cp -r $ZZH_PATCHES/zram/lz4/* ./lib/lz4/
+          cp -r $ZZH_PATCHES/zram/include/linux/* ./include/linux/
+          bash $ZZH_PATCHES/zram/apply_lz4_neon.sh
+
+          if [ -f "fs/f2fs/Makefile" ] && ! grep -qF "f2fs-\$(CONFIG_F2FS_IOSTAT) += iostat.o" "fs/f2fs/Makefile"; then
+            echo "f2fs-\$(CONFIG_F2FS_IOSTAT) += iostat.o" >> "fs/f2fs/Makefile"
+          fi
+          
+          # patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/lz4-1.10.0.patch"
+          # patch --batch --forward -p1 < "${{ github.workspace }}/.github/patches/zram/zstd-1.5.7.patch"
 
       - name: Determine Kernel Localversion
         id: localversion
