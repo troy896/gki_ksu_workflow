@@ -474,18 +474,21 @@ jobs:
         shell: bash
         env:
           NOMOUNT_REF: main
-          NOMOUNT_DIR: bnomount
+          NOMOUNT_DIR: ${{ github.workspace }}/NoMount-Suite
           BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
           COMMON_KERNEL_FOLDER: kernel_workspace/common
           KSU_FOLDER: kernel_workspace/common/KernelSU
           KERNEL_VER: 6.12
         run: |
-          git clone https://github.com/Bouteillepleine/kernel_patches.git boutpatches
-          git clone https://github.com/Bouteillepleine/NoMount-Suite.git bnomount
-          cp "$NOMOUNT_DIR"/hookless/src/* kernel_workspace/common/fs/
-          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
+          # git clone https://github.com/Bouteillepleine/kernel_patches.git boutpatches
+          git clone https://github.com/Bouteillepleine/NoMount-Suite.git 
+          cp -r NoMount-Suite/hookless/src/* kernel_workspace/common/fs/
+          # bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
+          cd kernel_workspace/common
+          patch -p1 < "${{ github.workspace }}/NoMount-Suite/hookless/patches/nomount_kernel_integration.patch"
   
       - name: Record NoMount Version
+        if: inputs.use_lz4_zstd && inputs.kernel_version == '6.12'
         shell: bash
         env:
           NOMOUNT_REF: main
