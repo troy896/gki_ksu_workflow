@@ -29,7 +29,7 @@ fi
 if [ -f "$CONFIG_FILE" ]; then
   jq '
     with_entries(select(.key == "6.1")) |
-    .["6.1"].revisions |= with_entries(select((.key | tonumber) == 176))
+    .["6.1"].revisions |= with_entries(select((.key | tonumber) == 177))
   ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 fi
 
