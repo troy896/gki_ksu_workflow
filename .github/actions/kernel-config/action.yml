@@ -154,6 +154,7 @@ runs:
         CONFIG_DEBUG_ATOMIC_SLEEP=n
         CONFIG_GDB_SCRIPTS=n
         CONFIG_OPTIMIZE_INLINING=y
+        CONFIG_SCHED_BORE=y
         EOF
         
         case "${{ inputs.variant }}" in
