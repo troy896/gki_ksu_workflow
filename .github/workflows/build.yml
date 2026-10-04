@@ -15,7 +15,7 @@ on:
       kernel_version:
         description: 'Kernel Version'
         required: true
-        default: '6.12'
+        default: '6.1'
         type: choice
         options:
           - 'all'
@@ -155,7 +155,7 @@ on:
       build_timestamp:
         description: 'Spoof Build Time (Leave blank for now)'
         required: false
-        default: 'Thu Jul 16 19:32:42 UTC 2026'
+        default: 'Fri Sep 18 01:33:13 UTC 2026'
         type: string
       build_user_host:
         description: 'Spoof Builder (user@host)'
@@ -224,7 +224,7 @@ jobs:
           echo "release_tag=$(TZ='America/Chicago' date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
           config_file=".github/config/kernel_versions.json"
 
-          kvs='["6.12"]'
+          kvs='["6.1"]'
           echo "kernel_versions=$kvs" >> $GITHUB_OUTPUT
 
           if [ -z "${{ inputs.build_timestamp }}" ] || [ "${{ inputs.build_timestamp }}" = "''" ]; then
@@ -261,7 +261,7 @@ jobs:
             revisions=$(echo "$config" | jq -r '.revisions | keys[]')
             sub_levels_to_build=""
             for rev in $revisions; do
-              if [ "$rev" -lt 81 ]; then
+              if [ "$rev" -lt 177 ]; then
                 continue
               fi
               asb_date=$(echo "$config" | jq -r '.revisions["'$rev'"].asb_date')
