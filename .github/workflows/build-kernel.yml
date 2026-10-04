@@ -549,8 +549,38 @@ jobs:
           patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
-          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
+          # curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
 
+      - name: Apply NoMount (hookless) Patch
+        shell: bash
+        env:
+          NOMOUNT_REF: main
+          NOMOUNT_DIR: bnomount
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
+          COMMON_KERNEL_FOLDER: kernel_workspace/common
+          KSU_FOLDER: kernel_workspace/common/KernelSU
+          KERNEL_VER: 6.12
+        run: |
+          git clone https://github.com/Bouteillepleine/kernel_patches.git boutpatches
+          git clone https://github.com/Bouteillepleine/NoMount-Suite.git bnomount
+          cp "$NOMOUNT_DIR"/hookless/src/* kernel_workspace/common/fs/
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
+  
+      - name: Record NoMount Version
+        shell: bash
+        env:
+          NOMOUNT_REF: main
+          NOMOUNT_DIR: bnomount
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
+          COMMON_KERNEL_FOLDER: kernel_workspace/common
+          KSU_FOLDER: kernel_workspace/common/KernelSU
+          KERNEL_VER: 6.12
+        run: |
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" pathhide
+          
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd
         run: |
