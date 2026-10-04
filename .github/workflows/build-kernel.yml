@@ -559,7 +559,7 @@ jobs:
           BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
           COMMON_KERNEL_FOLDER: kernel_workspace/common
           KSU_FOLDER: kernel_workspace/common/KernelSU
-          KERNEL_VER: 6.12
+          KERNEL_VER: 6.1
         run: |
           git clone https://github.com/Bouteillepleine/kernel_patches.git boutpatches
           git clone https://github.com/Bouteillepleine/NoMount-Suite.git bnomount
@@ -574,7 +574,7 @@ jobs:
           BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
           COMMON_KERNEL_FOLDER: kernel_workspace/common
           KSU_FOLDER: kernel_workspace/common/KernelSU
-          KERNEL_VER: 6.12
+          KERNEL_VER: 6.1
         run: |
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
