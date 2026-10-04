@@ -87,7 +87,7 @@ runs:
         CONFIG_NET_SCH_FQ_CODEL=y
         CONFIG_NET_SCH_INGRESS=y
         CONFIG_NET_SCH_DEFAULT=y
-        CONFIG_DEFAULT_CAKE=y
+        CONFIG_DEFAULT_FQ_CODEL=y
         CONFIG_NET_SCH_CAKE=y    
         CONFIG_ZSTD_COMPRESS=y
         CONFIG_ZSTD_DECOMPRESS=y
@@ -155,6 +155,7 @@ runs:
         CONFIG_GDB_SCRIPTS=n
         CONFIG_OPTIMIZE_INLINING=y
         CONFIG_SCHED_BORE=y
+        CONFIG_NET_ACT_CONNMARK=y
         EOF
         
         case "${{ inputs.variant }}" in
