@@ -565,21 +565,6 @@ jobs:
           git clone https://github.com/Bouteillepleine/NoMount-Suite.git bnomount
           cp "$NOMOUNT_DIR"/hookless/src/* kernel_workspace/common/fs/
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
-  
-      - name: Record NoMount Version
-        shell: bash
-        env:
-          NOMOUNT_REF: main
-          NOMOUNT_DIR: bnomount
-          BOUTEILLE_KERNEL_PATCHES_FOLDER: boutpatches
-          COMMON_KERNEL_FOLDER: kernel_workspace/common
-          KSU_FOLDER: kernel_workspace/common/KernelSU
-          KERNEL_VER: 6.1
-        run: |
-          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
-          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
-          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
-          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" pathhide
           
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd
