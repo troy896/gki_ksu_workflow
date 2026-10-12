@@ -530,6 +530,31 @@ jobs:
             fi
           fi
 
+      - name: Apply NoMount (hookless) Patch
+        shell: bash
+        env:
+          KERNEL_VER: 6.1
+        run: |
+          KERNEL_PLATFORM_DIR="$GITHUB_WORKSPACE/kernel_workspace"
+          COMMON_KERNEL_FOLDER="$KERNEL_PLATFORM_DIR/common"
+          KSU_FOLDER="$COMMON_KERNEL_FOLDER/KernelSU"
+          git clone https://github.com/Bouteillepleine/kernel_patches.git "$GITHUB_WORKSPACE/bouton_kernel_patches"
+          echo "BOUTEILLE_KERNEL_PATCHES_FOLDER=$GITHUB_WORKSPACE/bouton_kernel_patches" >> "$GITHUB_ENV"
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
+  
+      - name: Record NoMount Version
+        shell: bash
+        env:
+          KERNEL_VER: 6.1
+        run: |
+          KERNEL_PLATFORM_DIR="$GITHUB_WORKSPACE/kernel_workspace"
+          COMMON_KERNEL_FOLDER="$KERNEL_PLATFORM_DIR/common"
+          KSU_FOLDER="$COMMON_KERNEL_FOLDER/KernelSU"
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
+          bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" pathhide
+          
       - name: Apply Unicode Bypass Fix
         working-directory: kernel_workspace/common
         run: |
@@ -537,7 +562,7 @@ jobs:
           patch -p1 < "${{ github.workspace }}/.github/patches/android14-6.1/bbrv3hard.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/0001-ALSA-pcm-restore-old-wait_time-calculation.patch"
           # patch -p1 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
-          # patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
           # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
           patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-5.10-6.6.patch"
 
@@ -549,7 +574,7 @@ jobs:
           # patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
-          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
+          # curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd
