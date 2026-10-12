@@ -552,7 +552,7 @@ jobs:
           BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/bouton_kernel_patches
         run: |
           rm -f "$BOUTEILLE_KERNEL_PATCHES_FOLDER/common/_hook/fix_selinux_seqno.patch"
-          cp "${{ github.workspace }}/.github/fix_selinux_seqno.patch" "$BOUTEILLE_KERNEL_PATCHES_FOLDER/common/_hook/fix_selinux_seqno.patch"
+          cp "${{ github.workspace }}/.github/patches/fix_selinux_seqno.patch" "$BOUTEILLE_KERNEL_PATCHES_FOLDER/common/_hook/fix_selinux_seqno.patch"
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
