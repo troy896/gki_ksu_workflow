@@ -461,6 +461,18 @@ jobs:
               ;;
           esac
 
+      - name: Setup nomount
+        if: inputs.use_susfs
+        working-directory: kernel_workspace/common
+        env:
+          NOMOUNT_DIR: ${{ github.workspace }}/NoMount-Suite
+          PATCH_DIR: ${{ github.workspace }}/NoMount-Suite/hookless/patches
+        run: |
+          NOMOUNT_REPO="https://github.com/Bouteillepleine/NoMount-Suite.git"
+          git clone "$NOMOUNT_REPO" "$NOMOUNT_DIR"
+          cp "$NOMOUNT_DIR"/hookless/src/* fs/
+          patch -p1 --fuzz=1 < "$PATCH_DIR/nomount_kernel_integration.patch"
+          
       - name: Setup Manual Hooks (RX/XX only)
         if: >-
           (inputs.variant == 'MidoriSU-XX' && inputs.midorisu_xx_hook_mode == 'manual') ||
@@ -531,6 +543,7 @@ jobs:
           fi
 
       - name: Apply NoMount (hookless) Patch
+        if: inputs.use_lz4_zstd
         shell: bash
         env:
           KERNEL_VER: 6.1
@@ -543,6 +556,7 @@ jobs:
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
   
       - name: Record NoMount Version
+        if: inputs.use_lz4_zstd
         shell: bash
         env:
           KERNEL_VER: 6.1
