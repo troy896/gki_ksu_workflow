@@ -534,11 +534,11 @@ jobs:
         shell: bash
         env:
           KERNEL_VER: 6.1
+          KERNEL_PLATFORM_DIR: ${{ github.workspace }}/kernel_workspace
+          COMMON_KERNEL_FOLDER: ${{ github.workspace }}/kernel_workspace/common
+          KSU_FOLDER: ${{ github.workspace }}/kernel_workspace/common/KernelSU
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/bouton_kernel_patches
         run: |
-          KERNEL_PLATFORM_DIR="${{ github.workspace }}/kernel_workspace"
-          COMMON_KERNEL_FOLDER="$KERNEL_PLATFORM_DIR/common"
-          KSU_FOLDER="$COMMON_KERNEL_FOLDER/KernelSU"
-          BOUTEILLE_KERNEL_PATCHES_FOLDER="${{ github.workspace }}/bouton_kernel_patches"
           git clone https://github.com/Bouteillepleine/kernel_patches.git bouton_kernel_patches
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
   
@@ -546,11 +546,11 @@ jobs:
         shell: bash
         env:
           KERNEL_VER: 6.1
+          KERNEL_PLATFORM_DIR: ${{ github.workspace }}/kernel_workspace
+          COMMON_KERNEL_FOLDER: ${{ github.workspace }}/kernel_workspace/common
+          KSU_FOLDER: ${{ github.workspace }}/kernel_workspace/common/KernelSU
+          BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/bouton_kernel_patches
         run: |
-          KERNEL_PLATFORM_DIR="${{ github.workspace }}/kernel_workspace"
-          COMMON_KERNEL_FOLDER="$KERNEL_PLATFORM_DIR/common"
-          KSU_FOLDER="$COMMON_KERNEL_FOLDER/KernelSU"
-          BOUTEILLE_KERNEL_PATCHES_FOLDER="${{ github.workspace }}/bouton_kernel_patches"
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
