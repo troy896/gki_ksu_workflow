@@ -1,17 +1,5 @@
-From 4b20b5fd08aecbed6f6544d742f8c5d70af43031 Mon Sep 17 00:00:00 2001
-From: Cashiris <troy896@gmail.com>
-Date: Mon, 12 Oct 2026 05:01:02 -0500
-Subject: [PATCH] Remove selinux_status_update_policyload calls
-
-Remove selinux_status_update_policyload calls for policy load notifications.
----
- rules.c | 2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/rules.c b/rules.c
-index a9d4f672..166a57e5 100644
---- a/rules.c
-+++ b/rules.c
+--- a/kernel/selinux/rules.c
++++ b/kernel/selinux/rules.c
 @@ -15,12 +15,10 @@ static void reset_avc_cache()
  #if ((!defined(KSU_COMPAT_USE_SELINUX_STATE)) || LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0))
  	avc_ss_reset(0);
@@ -24,4 +12,3 @@ index a9d4f672..166a57e5 100644
 -	selinux_status_update_policyload(&selinux_state, 0);
  #endif
  	selinux_xfrm_notify_policyload();
- }
