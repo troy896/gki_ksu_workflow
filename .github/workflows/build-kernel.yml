@@ -554,6 +554,9 @@ jobs:
           cd kernel_workspace/common/KernelSU
           patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/fix_selinux_seqno.patch"
           cd ../../..
+          cd bouton_kernel_patches
+          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/fixnomount.patch"
+          cd ..
           sed -i '/apply_or_die "\$HOOK\/fix_selinux_seqno\.patch" "\$KSU_FOLDER"/d' "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh"
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
