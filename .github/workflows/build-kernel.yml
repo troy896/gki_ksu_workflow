@@ -540,8 +540,6 @@ jobs:
           BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/bouton_kernel_patches
         run: |
           git clone https://github.com/Bouteillepleine/kernel_patches.git bouton_kernel_patches
-          rm bouton_kernel_patches/common/_hook/fix_selinux_seqno.patch
-          cp .github/patches/fix_selinux_seqno.patch bouton_kernel_patches/common/_hook/fix_selinux_seqno.patch
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hookless
   
       - name: Record NoMount Version
@@ -553,6 +551,8 @@ jobs:
           KSU_FOLDER: ${{ github.workspace }}/kernel_workspace/common/KernelSU
           BOUTEILLE_KERNEL_PATCHES_FOLDER: ${{ github.workspace }}/bouton_kernel_patches
         run: |
+          rm -f "$BOUTEILLE_KERNEL_PATCHES_FOLDER/common/_hook/fix_selinux_seqno.patch"
+          cp "${{ github.workspace }}/.github/fix_selinux_seqno.patch" "$BOUTEILLE_KERNEL_PATCHES_FOLDER/common/_hook/fix_selinux_seqno.patch"
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" record-version
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" hook
           bash "$BOUTEILLE_KERNEL_PATCHES_FOLDER/scripts/apply_nomount_stack.sh" ghost
