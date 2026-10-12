@@ -1,0 +1,26 @@
+From b625acb48d6c4d87a63f8ba5b1294a0f097f6b50 Mon Sep 17 00:00:00 2001
+From: Cashiris <troy896@gmail.com>
+Date: Mon, 12 Oct 2026 06:23:29 -0500
+Subject: [PATCH] 1
+
+---
+ scripts/apply_nomount_stack.sh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/apply_nomount_stack.sh b/scripts/apply_nomount_stack.sh
+index 855292f..b85fe7e 100644
+--- a/scripts/apply_nomount_stack.sh
++++ b/scripts/apply_nomount_stack.sh
+@@ -139,7 +139,8 @@ apply_or_die() {
+     elif patch -p1 -F0 --reverse --dry-run -d "$root" <"$p" >/dev/null 2>&1; then
+         echo "  already applied: $(basename "$p")"
+     else
+-        die "$(basename "$p") neither applies at fuzz 0 nor is already present in $root"
++        patch -p1 --forward --fuzz=3 -d "$root" <"$p" ||
++            die "$(basename "$p") neither applies at fuzz 0 nor is already present in $root"
+     fi
+ }
+ 
+-- 
+2.55.0.windows.3
+
