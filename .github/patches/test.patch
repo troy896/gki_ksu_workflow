@@ -1,0 +1,189 @@
+From 3de3032fb82dd76dc5a0364cf311bdcdfa871496 Mon Sep 17 00:00:00 2001
+From: Asim Viladi Oglu Manizada <manizada@pm.me>
+Date: Sat, 25 Jul 2026 03:21:06 +0000
+Subject: [PATCH] sctp: prevent peer transport count overflow
+
+commit bd0e9289e2642f6a5c54faad304ce0f41e926d22 upstream.
+
+sctp_assoc_add_peer() increments the association's 16-bit transport_count
+for every new unique peer. Adding the 65,536th transport wraps the count to
+zero.
+
+SCTP sock_diag uses transport_count to reserve the INET_DIAG_PEERS payload,
+then copies one sockaddr_storage for every entry in transport_addr_list.
+After the wrap, a diagnostic dump reserves an empty payload and writes
+8 MiB of peer addresses past the skb tail.
+
+Reject a new unique peer when transport_count has reached U16_MAX. Perform
+the check after the existing-peer lookup so a duplicate address continues
+to return its existing transport at the limit.
+
+Fixes: 8f840e47f190 ("sctp: add the sctp_diag.c file")
+Cc: stable@vger.kernel.org
+Signed-off-by: Asim Viladi Oglu Manizada <manizada@pm.me>
+Acked-by: Xin Long <lucien.xin@gmail.com>
+Link: https://patch.msgid.link/20260725032053.521705-1-manizada@pm.me
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: engstk <eng.stk@sapo.pt>
+---
+ net/sctp/associola.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/net/sctp/associola.c b/net/sctp/associola.c
+index 8b97b13d4..4dd36c837 100644
+--- a/net/sctp/associola.c
++++ b/net/sctp/associola.c
+@@ -616,6 +616,9 @@ struct sctp_transport *sctp_assoc_add_peer(struct sctp_association *asoc,
+ 		return peer;
+ 	}
+ 
++	if (asoc->peer.transport_count == U16_MAX)
++		return NULL;
++
+ 	peer = sctp_transport_new(asoc->base.net, addr, gfp);
+ 	if (!peer)
+ 		return NULL;
+diff --git a/drivers/net/ppp/pppoe.c b/drivers/net/ppp/pppoe.c
+index c6f44af35..91e03b17b 100644
+--- a/drivers/net/ppp/pppoe.c
++++ b/drivers/net/ppp/pppoe.c
+@@ -893,6 +893,7 @@ static int pppoe_sendmsg(struct socket *sock, struct msghdr *m,
+ 	dev_hard_header(skb, dev, ETH_P_PPP_SES,
+ 			po->pppoe_pa.remote, NULL, total_len);
+ 
++	ph = pppoe_hdr(skb);
+ 	memcpy(ph, &hdr, sizeof(struct pppoe_hdr));
+ 
+ 	ph->length = htons(total_len);
+diff --git a/drivers/net/tun.c b/drivers/net/tun.c
+index 03478ae3f..285f0e1a3 100644
+--- a/drivers/net/tun.c
++++ b/drivers/net/tun.c
+@@ -1175,11 +1175,16 @@ static netdev_features_t tun_net_fix_features(struct net_device *dev,
+ static void tun_set_headroom(struct net_device *dev, int new_hr)
+ {
+ 	struct tun_struct *tun = netdev_priv(dev);
++	size_t max_headroom;
+ 
+-	if (new_hr < NET_SKB_PAD)
+-		new_hr = NET_SKB_PAD;
++	max_headroom = min_t(size_t, SKB_MAX_HEAD(0), U16_MAX - 1);
+ 
+-	tun->align = new_hr;
++	if ((tun->flags & TUN_TYPE_MASK) == IFF_TAP)
++		max_headroom -= ETH_HLEN + NET_IP_ALIGN;
++	else
++		max_headroom -= 1;
++
++	tun->align = clamp_t(int, new_hr, NET_SKB_PAD, max_headroom);
+ }
+ 
+ static void
+@@ -1868,7 +1873,13 @@ static ssize_t tun_get_user(struct tun_struct *tun, struct tun_file *tfile,
+ 	switch (tun->flags & TUN_TYPE_MASK) {
+ 	case IFF_TUN:
+ 		if (tun->flags & IFF_NO_PI) {
+-			u8 ip_version = skb->len ? (skb->data[0] >> 4) : 0;
++			u8 ip_version;
++
++			if (!pskb_may_pull(skb, 1)) {
++				err = -EINVAL;
++				goto drop;
++			}
++			ip_version = skb->data[0] >> 4;
+ 
+ 			switch (ip_version) {
+ 			case 4:
+@@ -1888,7 +1899,7 @@ static ssize_t tun_get_user(struct tun_struct *tun, struct tun_file *tfile,
+ 		skb->dev = tun->dev;
+ 		break;
+ 	case IFF_TAP:
+-		if (frags && !pskb_may_pull(skb, ETH_HLEN)) {
++		if (!pskb_may_pull(skb, ETH_HLEN)) {
+ 			err = -ENOMEM;
+ 			drop_reason = SKB_DROP_REASON_HDR_TRUNC;
+ 			goto drop;
+diff --git a/net/ipv6/ah6.c b/net/ipv6/ah6.c
+index 151d8d98d..b8bab8219 100644
+--- a/net/ipv6/ah6.c
++++ b/net/ipv6/ah6.c
+@@ -235,26 +235,28 @@ static void ipv6_rearrange_destopt(struct ipv6hdr *iph, struct ipv6_opt_hdr *des
+  *	Rearrange the destination address in @iph and the addresses in @rthdr
+  *	so that they appear in the order they will at the final destination.
+  *	See Appendix A2 of RFC 2402 for details.
++ *
++ * Return: 0 on success, -EINVAL if segments_left exceeds the number of
++ * addresses described by hdrlen.
+  */
+-static void ipv6_rearrange_rthdr(struct ipv6hdr *iph, struct ipv6_rt_hdr *rthdr)
++static int ipv6_rearrange_rthdr(struct ipv6hdr *iph, struct ipv6_rt_hdr *rthdr)
+ {
+-	int segments, segments_left;
++	unsigned int segments, segments_left;
+ 	struct in6_addr *addrs;
+ 	struct in6_addr final_addr;
+ 
+ 	segments_left = rthdr->segments_left;
+ 	if (segments_left == 0)
+-		return;
+-	rthdr->segments_left = 0;
++		return 0;
+ 
+-	/* The value of rthdr->hdrlen has been verified either by the system
+-	 * call if it is locally generated, or by ipv6_rthdr_rcv() for incoming
+-	 * packets.  So we can assume that it is even and that segments is
+-	 * greater than or equal to segments_left.
+-	 *
+-	 * For the same reason we can assume that this option is of type 0.
++	/* Raw locally generated packets can reach AH6 without the invariant
++	 * required by the rt0-style address rearrangement below.
+ 	 */
+ 	segments = rthdr->hdrlen >> 1;
++	if (segments_left > segments)
++		return -EINVAL;
++
++	rthdr->segments_left = 0;
+ 
+ 	addrs = ((struct rt0_hdr *)rthdr)->addr;
+ 	final_addr = addrs[segments - 1];
+@@ -264,6 +266,8 @@ static void ipv6_rearrange_rthdr(struct ipv6hdr *iph, struct ipv6_rt_hdr *rthdr)
+ 
+ 	addrs[0] = iph->daddr;
+ 	iph->daddr = final_addr;
++
++	return 0;
+ }
+ 
+ static int ipv6_clear_mutable_options(struct ipv6hdr *iph, int len, int dir)
+@@ -276,6 +280,7 @@ static int ipv6_clear_mutable_options(struct ipv6hdr *iph, int len, int dir)
+ 	} exthdr = { .iph = iph };
+ 	char *end = exthdr.raw + len;
+ 	int nexthdr = iph->nexthdr;
++	int err;
+ 
+ 	exthdr.iph++;
+ 
+@@ -295,7 +300,9 @@ static int ipv6_clear_mutable_options(struct ipv6hdr *iph, int len, int dir)
+ 			break;
+ 
+ 		case NEXTHDR_ROUTING:
+-			ipv6_rearrange_rthdr(iph, exthdr.rth);
++			err = ipv6_rearrange_rthdr(iph, exthdr.rth);
++			if (err)
++				return err;
+ 			break;
+ 
+ 		default:
+diff --git a/kernel/workqueue.c b/kernel/workqueue.c
+index 6df3a1ec0..274b2e3f4 100644
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -312,7 +312,7 @@ module_param_named(disable_numa, wq_disable_numa, bool, 0444);
+ 
+ /* see the comment above the definition of WQ_POWER_EFFICIENT */
+ static bool wq_power_efficient = IS_ENABLED(CONFIG_WQ_POWER_EFFICIENT_DEFAULT);
+-module_param_named(power_efficient, wq_power_efficient, bool, 0444);
++module_param_named(power_efficient, wq_power_efficient, bool, 0644);
+ 
+ static bool wq_online;			/* can kworkers be created yet? */
