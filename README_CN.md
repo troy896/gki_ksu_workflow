@@ -81,14 +81,17 @@
 
 | 功能 | 描述 |
 | :--- | :--- |
-| **首页概览** | 现代化仪表盘状态卡片：动态显示 KSU 驱动名称（原生驱动名与 LKM 动态识别）、Hook 类型、SUSFS 版本、Droidspaces 版本、Re:Kernel(-X) 版本、内核构建时间与 OEM 解锁状态。 |
-| **双主题与外观定制** | 深度支持 Material 3 Expressive 与 Miuix 两套 UI 风格及实时主题预览；内置切换器，可在 **MidoriSU**、**KowSU** 与 **官方 KernelSU** 之间即时切换应用名称、图标及开屏主题。 |
-| **镜像与内核刷写** | 支持在应用内直接备份与刷写 `boot.img` 分区，支持直接刷写 AnyKernel3 ZIP 刷机包并选择目标槽位（Slot A/B）。 |
+| **现代化 Bento 仪表盘** | 便当盒式响应式仪表盘与弹性按压缩放回弹动效；动态显示 KSU 驱动名称（原生驱动名与 LKM 动态识别）、罗马数字 UAPI 版本、Hook 类型、SUSFS 版本、Droidspaces 版本、Re:Kernel(-X) 版本、内核构建时间与 OEM 解锁状态。 |
+| **内置 SUSFS 管理** | 内核工具中原生集成的 SUSFS 控制面板，取代 susfs4ksu 模块：支持 SUS Path、SUS Kstat、SUS Map 与 Open Redirect 规则；内核版本（`uname`）与启动参数（`/proc/cmdline` / `bootconfig`）伪装；AVC 日志伪装、SUS 挂载隐藏，以及对 `getpriority` / `ioprio` 探测隐藏指定应用的优先级 UID 过滤。规则由 `ksud` 在开机时自动应用（兼容晚加载的 SUSFS LKM），并提供每次开机的应用报告、配置备份与恢复，以及从现有 susfs4ksu 模块一键导入。同时支持内核内置 SUSFS 与 susfs4ksu-lkm。 |
+| **双主题与外观定制** | 深度支持 Material 3 Expressive 与 Miuix 两套 UI 风格及实时主题预览；配备 Material 悬浮胶囊底部导航栏、重复点击底栏快速回顶、模块更新红点提示，内置切换器可在 **MidoriSU**、**KowSU** 与 **官方 KernelSU** 之间即时切换应用名称、图标及开屏主题。 |
+| **OTA Payload 抽取与 ARB 分析** | 支持从本地或在线 OTA ZIP / `payload.bin` 固件中秒级提取 `boot.img` 分区镜像，支持 HTTP Range Request 免下载数十 GB 完整包；内置防回滚（ARB）安全指数分析与内核版本检测。 |
+| **镜像刷写与安全预检** | 支持在应用内直接备份与刷写 `boot.img` 分区，支持直接刷写 AnyKernel3 ZIP 刷机包并选择目标槽位（Slot A/B）；新增模块刷入前安全静态预检，拦截高危脚本并规避死循环变砖风险。 |
+| **内核 Panic 与崩溃堆栈分析** | 专属内核崩溃日志分析工具：深度扫描 `/proc/last_kmsg`、`/sys/fs/pstore/console-ramoops*` 与 dmesg 崩溃日志，精准定位 Kernel Panic、OOPS 堆栈轨迹、内存故障与异常重启根因。 |
 | **授权列表备份与恢复** | 支持 Superuser 授权列表与应用配置文件的完整备份与恢复，跨机迁移与重装无忧。 |
 | **模块导出为 ZIP** | 支持将已安装的任意活动/非活动模块一键打包并导出为标准可刷写的 ZIP 模块包。 |
 | **内核模块 (LKM) 管理** | 浏览已加载的内核模块，支持动态加载与卸载操作。 |
-| **内核诊断工具** | 应用内浏览、搜索与分享 `/proc/kallsyms` 内核符号、实时 dmesg 内核日志与 `CONFIG_*` 内核编译配置。 |
-| **快捷开关与功能集成** | 支持即时切换 SELinux 运行模式（Enforcing / Permissive）、内置 SUSFS WebUI 快捷跳转入口与驱动更新检查开关。 |
+| **内核诊断工具箱** | 应用内浏览、搜索、过滤与分享 `/proc/kallsyms` 内核符号、实时 dmesg 内核日志与 `CONFIG_*` 内核编译配置，并支持底栏快捷切换控件。 |
+| **快捷开关与功能集成** | 支持即时切换 SELinux 运行模式（Enforcing / Permissive）与驱动更新检查开关。 |
 
 ---
 
@@ -112,10 +115,11 @@
 | :--- | :--- |
 | **内核版本** | 选择 `6.1`、`6.6`、`6.12` 或 `all` 来编译一个或全部内核版本。子版本、修订号、编译器和 Rust 设置从集中配置中自动解析。 |
 | **源码镜像** | 在 Google 官方 AOSP 镜像或自托管镜像之间选择，用于内核源码和工具链下载。 |
-| **SUSFS 模块** | 当启用 SUSFS 时，自动获取最新的 [susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module) 并将其附加到发布中。单个 `susfs_commit` 输入控制所有变体的 SUSFS 版本。 |
+| **SUSFS** | SUSFS 内核补丁自动从上游同步，并为所有支持的子版本生成，包括 `kernel_versions.json` 中固定的非 LTS 修订版本。单个 `susfs_commit` 输入控制所有变体的 SUSFS 版本。SUSFS 直接在 MidoriSU 管理器中配置，发布中不再附带单独的 susfs4ksu 模块。 |
 | **KSU 工具箱** | 自动从 nightly.link 获取最新的 [ksu_toolkit](https://github.com/backslashxx/ksu_toolkit) 模块并将其附加到发布中。 |
 | **Droidspaces** | 通过 [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) 提供容器支持 — SYSVIPC、IPC_NS、PID_NS、DEVTMPFS、NTSync 和网络。通过 `use_droidspaces` 开关按变体启用。 |
 | **Re:Kernel(-X)** | 集成的 [Re:Kernel](https://github.com/Sakion-Team/Re-Kernel) 和 [Re:Kernel-X](https://github.com/myflavor/ReKernel-X) 模块直接编译进内核。提供 tombstone 冻结恢复、网络触发解冻和 binder 异步清理。通过 `use_rekernel` 开关控制。 |
+| **VPNHide Next** | 通过 In-tree kpatch (`CONFIG_VPNHIDE=y`) 集成 [VPNHide Next](https://github.com/soranerai/vpnhide_next_backend)，在内核层隐藏 VPN 网络接口、路由规则和套接字描述符，无需依赖动态 LKM。自动将配套的 `vpnhide-bridge.zip` 模块与管理器 APK (`vpnhide.apk`) 附加到发布中。通过 `use_vpnhide` 开关控制。 |
 | **Unicode 绕过修复** | 始终启用。修补内核 Unicode 规范化，以防止通过非标准 Unicode 编码进行文件系统绕过攻击。 |
 | **ADIOS I/O 调度器** | 可选集成 [ADIOS](https://github.com/firelzrd/adios)，并作为内核的内置默认多队列 I/O 调度器。通过 `use_adios` 开关启用。 |
 | **LZ4/ZSTD ZRAM 后端** | 可选将内核中的 LZ4 和 ZSTD 实现更新为官方 LZ4 1.10.0 与 Zstandard 1.5.7 版本，并为 kernel 6.12 (仅在6.12.23测试通过) 启用 ZRAM 后端。通过 `use_lz4_zstd` 开关控制；6.1 和 6.6 构建保持不变。 |
@@ -130,10 +134,14 @@
 
 | 品牌 | 型号 |
 | :--- | :--- |
-| Google | Pixel 7/8/9/10 系列 (Tensor) |
+| Google | Pixel 7/8/9/10/11 系列 (Tensor) |
 | Xiaomi | Xiaomi 17 系列 (Snapdragon) |
 | Xiaomi | REDMI K90 Pro Max (Snapdragon) |
+| Xiaomi | POCO F8 Ultra (Snapdragon) |
 | Tecno | Tecno Camon 40 Pro 4G (Helio) |
+| Motorola | Moto Edge 70 Max (Snapdragon) |
+| Lenovo | Legion Y70 2026 (Snapdragon) |
+| Lenovo | Legion Y700 Infinite (Snapdragon) |
 
 > [!NOTE]
 > **兼容性说明：**

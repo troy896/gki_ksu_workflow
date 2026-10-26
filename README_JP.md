@@ -81,14 +81,17 @@
 
 | 機能 | 説明 |
 | :--- | :--- |
-| **ホーム画面** | 刷新されたモダンなダッシュボード：KSU ドライバ名（ネイティブ名および LKM 動的検出）、フックタイプ、SUSFS バージョン、Droidspaces バージョン、Re:Kernel(-X) バージョン、カーネルビルド時刻、OEM ロック解除状態を一目で確認可能。 |
-| **デュアルテーマと外観カスタマイズ** | Material 3 Expressive と Miuix の両 UI スタイルおよびリアルタイムプレビューに完全対応。**MidoriSU**、**KowSU**、**公式 KernelSU** のアプリ名・アイコン・起動画面テーマをアプリ内から即時切り替え可能。 |
-| **フラッシュ・パーティションツール** | アプリ内で `boot.img` のバックアップと直接フラッシュが可能。さらに AnyKernel3 ZIP パッケージの直接フラッシュおよび対象スロット選択（Slot A/B）に対応。 |
+| **モダンな Bento ダッシュボード** | 弾むようなプレスフィードバックを備えた弁当スタイルのレスポンシブダッシュボード。KSU ドライバ名（ネイティブ名および LKM 動的検出）、ローマ数字 UAPI バージョン、フックタイプ、SUSFS バージョン、Droidspaces バージョン、Re:Kernel(-X) バージョン、カーネルビルド時刻、OEM ロック解除状態を一目で確認可能。 |
+| **内蔵 SUSFS 管理** | susfs4ksu モジュールに代わる、カーネルツール内蔵の SUSFS コントロールパネル。SUS Path / SUS Kstat / SUS Map / Open Redirect ルール、カーネルバージョン（`uname`）と起動パラメータ（`/proc/cmdline` / `bootconfig`）の偽装、AVC ログ偽装、SUS マウントの隠蔽、指定アプリを `getpriority` / `ioprio` による検出から隠す優先度 UID フィルタに対応。ルールは起動時に `ksud` が自動適用し（後から読み込まれる SUSFS LKM にも対応）、起動ごとの適用レポート、設定のバックアップ／復元、既存の susfs4ksu モジュールからのワンタップ移行も可能です。カーネル内蔵 SUSFS と susfs4ksu-lkm の両方で動作します。 |
+| **デュアルテーマと外観カスタマイズ** | Material 3 Expressive と Miuix の両 UI スタイルおよびリアルタイムプレビューに完全対応。Material 向けフローティングピル型ボトムナビゲーション、タブ再タップによるトップへのスムーズスクロール、モジュール更新バッジ、さらに **MidoriSU**、**KowSU**、**公式 KernelSU** のアプリ名・アイコン・起動画面テーマの即時切り替えを搭載。 |
+| **OTA Payload 抽出と ARB 解析** | ローカルまたはオンラインの OTA ZIP / `payload.bin` から `boot.img` を秒速抽出。HTTP Range Request により大容量パッケージ全体をダウンロードすることなく直接抽出可能。アンチロールバック（ARB）インデックスおよびブートカーネルバージョンの解析機能を内蔵。 |
+| **フラッシュ・安全事前検査** | アプリ内で `boot.img` のバックアップと直接フラッシュが可能。AnyKernel3 ZIP の直接フラッシュおよび対象スロット選択（Slot A/B）に対応。モジュールフラッシュ前の自動静的セキュリティ検査により、危険なスクリプトを検知しブートループを未然に防止。 |
+| **カーネル Panic・クラッシュログ解析** | 専用のクラッシュ解析ツール：`/proc/last_kmsg`、`/sys/fs/pstore/console-ramoops*`、dmesg をスキャンし、Kernel Panic、OOPS コールトレース、メモリエラー、予期せぬ再起動の根本原因を特定。 |
 | **許可リストのバックアップと復元** | Superuser 許可リストとアプリプロファイル設定の完全なバックアップ・復元に対応。 |
 | **モジュールを ZIP としてエクスポート** | インストール済みモジュールを標準のフラッシュ可能な ZIP アーカイブとして直接書き出し可能。 |
 | **カーネルモジュール (LKM) 管理** | ロードされているカーネルモジュールの確認、動的ロードおよびアンロードをサポート。 |
-| **カーネル診断ツール** | `/proc/kallsyms` シンボルテーブル、リアルタイム dmesg ログ、`CONFIG_*` カーネルビルド設定の閲覧・検索・共有が可能。 |
-| **クイック切替と統合機能** | SELinux 動作モード（Enforcing / Permissive）の即時切替、SUSFS WebUI へのショートカット、KSU ドライバ更新確認トグルを搭載。 |
+| **カーネル診断ツール** | `/proc/kallsyms` シンボルテーブル、リアルタイム dmesg ログ、`CONFIG_*` カーネルビルド設定の閲覧・検索・共有が可能。ボトムバーのクイックスイッチャーウィジェットに対応。 |
+| **クイック切替と統合機能** | SELinux 動作モード（Enforcing / Permissive）の即時切替と、KSU ドライバ更新確認トグルを搭載。 |
 
 ---
 
@@ -112,10 +115,11 @@
 | :--- | :--- |
 | **カーネルバージョン** | `6.1`、`6.6`、`6.12`、または `all` から、単一または全バージョンを選択できます。サブレベル、リビジョン、コンパイラ、Rust の各設定は、一元化された config から自動解決されます。 |
 | **ソースミラー** | カーネルソースおよびツールチェーンの取得先として、Google 公式の AOSP ミラー、またはセルフホストミラーを選択可能です。 |
-| **SUSFS モジュール** | SUSFS 有効時に、最新の [susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module) を自動取得してリリースに同梱します。全バリアントの SUSFS バージョンは単一の `susfs_commit` 入力で一元管理されます。 |
+| **SUSFS** | SUSFS カーネルパッチは上流から自動同期され、`kernel_versions.json` で固定した非 LTS リビジョンを含む、サポート対象の全サブレベル向けに生成されます。全バリアントの SUSFS バージョンは単一の `susfs_commit` 入力で一元管理されます。SUSFS は MidoriSU マネージャーで直接設定するため、リリースに susfs4ksu モジュールは同梱されません。 |
 | **KSU ツールキット** | 最新の [ksu_toolkit](https://github.com/backslashxx/ksu_toolkit) モジュールを nightly.link から自動取得し、リリースに同梱します。 |
 | **Droidspaces** | [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) を利用したコンテナ対応。SYSVIPC、IPC_NS、PID_NS、DEVTMPFS、NTSync、ネットワーク機能を提供します。`use_droidspaces` トグルでバリアントごとに有効化できます。 |
 | **Re:Kernel(-X)** | [Re:Kernel](https://github.com/Sakion-Team/Re-Kernel) および [Re:Kernel-X](https://github.com/myflavor/ReKernel-X) モジュールをカーネルに直接組み込みます。tombstone によるフリーズ復旧、ネットワークトリガーによる解除、binder 非同期クリーンアップを提供します。`use_rekernel` スイッチで制御します。 |
+| **VPNHide Next** | In-tree kpatch（`CONFIG_VPNHIDE=y`）を介して [VPNHide Next](https://github.com/soranerai/vpnhide_next_backend) を統合し、動的 LKM に依存することなくカーネルレベルで VPN ネットワークインターフェース、ルーティングルール、ソケット記述子を隠蔽します。付属の `vpnhide-bridge.zip` モジュールおよびマネージャー APK（`vpnhide.apk`）を自動取得してリリースに同梱します。`use_vpnhide` スイッチで制御します。 |
 | **Unicode バイパス修正** | 常に有効です。非標準の Unicode エンコーディングを用いたファイルシステムバイパス攻撃を防ぐため、カーネルの Unicode 正規化処理にパッチを適用します。 |
 | **ADIOS I/O スケジューラ** | [ADIOS](https://github.com/firelzrd/adios) をカーネル内蔵のデフォルト・マルチキュー I/O スケジューラとして統合します。`use_adios` スイッチで制御します。 |
 | **LZ4/ZSTD ZRAM バックエンド** | オプションでカーネルの LZ4 と ZSTD 実装を公式 LZ4 1.10.0 および Zstandard 1.5.7 に更新し、kernel 6.12 (6.12.23でのみテスト済み) の ZRAM バックエンドを有効化します。`use_lz4_zstd` トグルで制御し、6.1 および 6.6 ビルドは変更されません。 |
@@ -130,10 +134,14 @@
 
 | ブランド | モデル |
 | :--- | :--- |
-| Google | Pixel 7/8/9/10 シリーズ (Tensor) |
+| Google | Pixel 7/8/9/10/11 シリーズ (Tensor) |
 | Xiaomi | Xiaomi 17 シリーズ (Snapdragon) |
 | Xiaomi | REDMI K90 Pro Max (Snapdragon) |
+| Xiaomi | POCO F8 Ultra (Snapdragon) |
 | Tecno | Tecno Camon 40 Pro 4G (Helio) |
+| Motorola | Moto Edge 70 Max (Snapdragon) |
+| Lenovo | Legion Y70 2026 (Snapdragon) |
+| Lenovo | Legion Y700 Infinite (Snapdragon) |
 
 > [!NOTE]
 > **互換性について**

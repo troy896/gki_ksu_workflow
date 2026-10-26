@@ -81,14 +81,17 @@ All kernel version-specific settings are centralized in [`.github/config/kernel_
 
 | Feature | Description |
 | :--- | :--- |
-| **Homepage Overview** | Modernized dashboard status card: dynamically displays KSU driver name (native driver name & dynamic LKM detection), hook type, SUSFS version, Droidspaces version, Re:Kernel(-X) version, kernel build timestamp, and OEM unlock status. |
-| **Dual Themes & Personalization** | Seamlessly supports both Material 3 Expressive and Miuix UI themes with live preview cards; includes a built-in switcher to toggle between **MidoriSU**, **KowSU**, and **Official KernelSU** app names, icons, and splash themes. |
-| **Flashing & Partition Tools** | Direct in-app backup and flashing of `boot.img`, as well as flashing AnyKernel3 zip packages with target slot selection (Slot A/B). |
+| **Modern Bento Dashboard** | Bento-style responsive dashboard with spring press bounce feedback; dynamically displays KSU driver name (native driver & dynamic LKM detection), Roman numeral UAPI version, hook type, SUSFS version, Droidspaces version, Re:Kernel(-X) version, kernel build timestamp, and OEM unlock status. |
+| **Built-in SUSFS Management** | Native SUSFS control panel in Kernel Tools that replaces the susfs4ksu module: SUS Path, SUS Kstat, SUS Map, and Open Redirect rules; kernel version (`uname`) and boot parameter (`/proc/cmdline` / `bootconfig`) spoofing; AVC log spoofing, SUS mount hiding, and a priority UID filter that hides selected apps from `getpriority` / `ioprio` probes. Rules are applied by `ksud` at boot (including a late-loaded SUSFS LKM), with a per-boot report, configuration backup and restore, and one-tap import from an existing susfs4ksu module. Works with both built-in SUSFS and susfs4ksu-lkm. |
+| **Dual Themes & Personalization** | Seamlessly supports both Material 3 Expressive and Miuix UI themes with live preview cards; includes a floating pill bottom navigation bar, re-tapping active tab to scroll to top, module update badges, and a built-in switcher to toggle between **MidoriSU**, **KowSU**, and **Official KernelSU** app names, icons, and splash themes. |
+| **OTA Payload & ARB Analyzer** | Instant extraction of `boot.img` from local or online OTA zip / `payload.bin` archives via HTTP Range Requests without downloading entire multi-gigabyte packages; includes built-in Anti-Rollback (ARB) index and boot kernel version analysis. |
+| **Flashing & Safety Inspection** | Direct in-app backup and flashing of `boot.img`, flashing AnyKernel3 zip packages with target slot selection (Slot A/B), and automated module pre-flash safety inspection to detect risky scripts and prevent bootloops. |
+| **Kernel Panic & Crash Analyzer** | Dedicated crash analysis tool: scans `/proc/last_kmsg`, `/sys/fs/pstore/console-ramoops*`, and dmesg to pinpoint kernel panics, OOPS call traces, memory faults, and unexpected reboots. |
 | **Allowlist Backup & Restore** | Complete backup and restoration for Superuser allowlist rules and per-app profile configurations. |
 | **Module Export as ZIP** | Export any installed module directly into a standard flashable ZIP archive. |
 | **Kernel Module (LKM) Manager** | Inspect loaded kernel modules with support for dynamic loading and unloading. |
-| **Kernel Diagnostics** | In-app inspection, searching, and sharing for `/proc/kallsyms` symbol table, live dmesg kernel logs, and `CONFIG_*` kernel compile options. |
-| **Toggles & Integrations** | Instant SELinux mode switching (Enforcing / Permissive), integrated SUSFS WebUI shortcut, and KSU driver update check toggle. |
+| **Kernel Diagnostics** | In-app inspection, searching, filtering, and sharing for `/proc/kallsyms` symbol table, live dmesg kernel logs, and `CONFIG_*` kernel compile options, with bottom bar quick-switch widget. |
+| **Toggles & Integrations** | Instant SELinux mode switching (Enforcing / Permissive) and KSU driver update check toggle. |
 
 ---
 
@@ -112,10 +115,11 @@ All kernel version-specific settings are centralized in [`.github/config/kernel_
 | :--- | :--- |
 | **Kernel Version** | Select `6.1`, `6.6`, `6.12`, or `all` to compile one or all kernel versions. Sublevel, revision, compiler, and Rust settings are auto-resolved from the centralized config. |
 | **Source Mirror** | Choose between Google's official AOSP mirror or a self-hosted mirror for kernel source and toolchain downloads. |
-| **SUSFS Module** | When SUSFS is enabled, automatically fetches the latest [susfs4ksu-module](https://github.com/sidex15/susfs4ksu-module) and attaches it to the release. A single `susfs_commit` input controls SUSFS versions across variants. |
+| **SUSFS** | SUSFS kernel patches are synced from upstream automatically and generated for every supported sublevel, including pinned non-LTS revisions in `kernel_versions.json`. A single `susfs_commit` input controls SUSFS versions across variants. SUSFS is configured in MidoriSU Manager, so no separate susfs4ksu module is attached to releases. |
 | **KSU Toolkit** | Automatically fetches the latest [ksu_toolkit](https://github.com/backslashxx/ksu_toolkit) module from nightly.link and attaches it to the release. |
 | **Droidspaces** | Container support via [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) — SYSVIPC, IPC_NS, PID_NS, DEVTMPFS, NTSync, and networking. Enabled per-variant through the `use_droidspaces` toggle. |
 | **Re:Kernel(-X)** | Integrated [Re:Kernel](https://github.com/Sakion-Team/Re-Kernel) and [Re:Kernel-X](https://github.com/myflavor/ReKernel-X) modules compiled directly into the kernel. Provides tombstone freeze recovery, network-triggered unfreeze, and binder async cleanup. Toggled via `use_rekernel` switch. |
+| **VPNHide Next** | Integrated [VPNHide Next](https://github.com/soranerai/vpnhide_next_backend) via in-tree kpatch (`CONFIG_VPNHIDE=y`), hiding VPN network interfaces, routing rules, and socket descriptors at the kernel level without relying on dynamic LKM. Automatically attaches the companion `vpnhide-bridge.zip` module and manager APK (`vpnhide.apk`) to releases. Toggled via `use_vpnhide` switch. |
 | **Unicode Bypass Fix** | Always enabled. Patches kernel unicode normalization to prevent filesystem bypass attacks via non-standard unicode encodings. |
 | **ADIOS I/O Scheduler** | Optionally integrates [ADIOS](https://github.com/firelzrd/adios) as the built-in default multi-queue I/O scheduler for kernels. Enabled through the `use_adios` toggle. |
 | **LZ4/ZSTD ZRAM backends** | Optionally updates the kernel's LZ4 and ZSTD implementations from the official LZ4 1.10.0 and Zstandard 1.5.7 releases, with ZRAM backend support enabled for kernel 6.12 (only tested on 6.12.23). Controlled by the `use_lz4_zstd` toggle; 6.1 and 6.6 builds remain unchanged. |
@@ -130,10 +134,14 @@ The following devices have been confirmed to work with kernels built by this wor
 
 | Brand | Model |
 | :--- | :--- |
-| Google | Pixel 7/8/9/10 series (Tensor) |
+| Google | Pixel 7/8/9/10/11 series (Tensor) |
 | Xiaomi | Xiaomi 17 series (Snapdragon) |
 | Xiaomi | REDMI K90 Pro Max (Snapdragon) |
+| Xiaomi | POCO F8 Ultra (Snapdragon) |
 | Tecno | Tecno Camon 40 Pro 4G (Helio) |
+| Motorola | Moto Edge 70 Max (Snapdragon) |
+| Lenovo | Legion Y70 2026 (Snapdragon) |
+| Lenovo | Legion Y700 Infinite (Snapdragon) |
 
 > [!NOTE]
 > **Compatibility Notes:**
