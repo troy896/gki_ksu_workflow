@@ -542,12 +542,17 @@ jobs:
           # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
           patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-5.10-6.6.patch"
 
+      - name: Apply libbpf glibc 2.43 Fix
+        working-directory: kernel_workspace/common
+        run: |
+          sed -i -E 's/^([[:space:]]*)char \*res;$/\1const char *res;/; s/^([[:space:]]*)char \*next_path;$/\1const char *next_path;/' tools/lib/bpf/libbpf.c
+
       - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
         if: inputs.use_adios
         working-directory: kernel_workspace/common
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/adios.patch"
-          patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
+          # patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
           curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
