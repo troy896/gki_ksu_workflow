@@ -145,7 +145,7 @@ runs:
         CONFIG_PSTORE_CONSOLE=y
         CONFIG_PSTORE_RAM=y
         CONFIG_HEADERS_INSTALL=y
-        # CONFIG_SECTION_MISMATCH_WARN_ONLY is not set
+        CONFIG_SECTION_MISMATCH_WARN_ONLY=y
         CONFIG_DEBUGFS=y
         # CONFIG_MODULE_SIG_ALL is not set
         CONFIG_MODULE_SIG_KEY=""
@@ -154,6 +154,7 @@ runs:
         CONFIG_SCHEDSTATS=y
         CONFIG_DEBUG_FS=y
         CONFIG_DEBUG_FS_ALLOW_ALL=y
+        CONFIG_SCHED_BORE=y
         EOF
         
         case "${{ inputs.variant }}" in
