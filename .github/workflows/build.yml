@@ -419,8 +419,14 @@ jobs:
           echo "VPNHIDE_LINKS=$links" >> $GITHUB_ENV
           
       - name: Resolve NoMount Module Link
+        if: inputs.enable_susfs == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(cat commit_info/nomount_tag 2>/dev/null || true)
           links=$(gh release view ${tag:+"$tag"} --repo maxsteeel/nomount --json assets --jq '[.assets[] | select(.name | test("^NoMount-.*\\.zip$")) | "[`\(.name)`](\(.url))"] | join(", ")' 2>/dev/null || true)
           echo "NOMOUNT_LINKS=$links" >> $GITHUB_ENV
+
       - name: Read Commit Info
         id: ksu_info
         run: |
