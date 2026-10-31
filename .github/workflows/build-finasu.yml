@@ -74,7 +74,12 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           echo "[+] Locating SUSFS kernel patch for ${{ inputs.kernel_version }}..."
-          PATCH_DIR="${{ github.workspace }}/.github/patches/${{ inputs.kernel_version }}"
+          case "${{ inputs.kernel_version }}" in
+            '6.1')  BRANCH="android14-6.1" ;;
+            '6.6')  BRANCH="android14-6.6" ;;
+            '6.12') BRANCH="android15-6.12" ;;
+          esac
+          PATCH_DIR="${{ github.workspace }}/.github/patches/$BRANCH"
           DEINLINED_SCRIPT="${{ github.workspace }}/.github/scripts/susfs_deinlined.sh"
 
           # Only match the 50_ GKI kernel patch
