@@ -790,7 +790,7 @@ jobs:
           export KBUILD_ABS_SRCTREE=1
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error headers
-          make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error Image
+          make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error KSU_EXPECTED_HASH=367e28a646d4f448218ea1fa5d1228fcdd5fb20623c5e22eecb3ea3462fb19e1 Image
           [ "${{ inputs.use_ccache }}" = "true" ] && ccache -s || true
 
       - name: Trim Ccache
