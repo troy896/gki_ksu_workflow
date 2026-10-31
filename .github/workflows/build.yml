@@ -34,6 +34,7 @@ on:
           - MidoriSU-OX
           - MidoriSU-RX
           - MidoriSU-XX
+          - FinaSU
       midorisu_rx_hook_mode:
         description: 'MidoriSU-RX Hook Mode'
         required: true
