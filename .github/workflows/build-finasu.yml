@@ -47,9 +47,7 @@ jobs:
       - name: Restore Build Cache
         uses: ./.github/actions/restore-cache-retry
         with:
-          path: |
-            ~/.ccache
-            ~/.cache
+          path: ~/.ccache ~/.cache
           key: finasu-kernel-build-${{ inputs.kernel_version }}-${{ github.sha }}
           restore-keys: |
             finasu-kernel-build-${{ inputs.kernel_version }}-
