@@ -104,25 +104,28 @@ jobs:
         run: |
           DEFCONFIG="arch/arm64/configs/gki_defconfig"
 
-          cat >> $DEFCONFIG <<-'EOF'
-          CONFIG_KSU=y
-          CONFIG_KPROBES=y
-          CONFIG_KALLSYMS_ALL=y
-          CONFIG_EXT4_FS=y
-          CONFIG_HEADERS_INSTALL=y
-          CONFIG_NOMOUNT=y
-          CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y
-          EOF
+          echo "[+] Writing baseline FinaSU configs..."
+          {
+            echo "CONFIG_KSU=y"
+            echo "CONFIG_KPROBES=y"
+            echo "CONFIG_KALLSYMS_ALL=y"
+            echo "CONFIG_EXT4_FS=y"
+            echo "CONFIG_HEADERS_INSTALL=y"
+            echo "CONFIG_NOMOUNT=y"
+            echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y"
+          } >> "$DEFCONFIG"
 
           if [ "${{ inputs.enable_susfs }}" = "true" ]; then
-            cat >> $DEFCONFIG <<-'EOF'
-            CONFIG_KSU_SUSFS=y
-            CONFIG_THREAD_INFO_IN_TASK=y
-            EOF
+            echo "[+] Adding SUSFS configs..."
+            {
+              echo "CONFIG_KSU_SUSFS=y"
+              echo "CONFIG_THREAD_INFO_IN_TASK=y"
+            } >> "$DEFCONFIG"
           fi
 
           if [ "${{ inputs.enable_ksu_debug }}" = "true" ]; then
-            echo "CONFIG_KSU_DEBUG=y" >> $DEFCONFIG
+            echo "[+] Enabling KSU debug..."
+            echo "CONFIG_KSU_DEBUG=y" >> "$DEFCONFIG"
           fi
 
       - name: Compile GKI Kernel
