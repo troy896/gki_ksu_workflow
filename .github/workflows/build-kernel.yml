@@ -204,6 +204,20 @@ jobs:
           echo "[DEBUG] Ccache version : $(ccache --version | head -1)"
           echo "::endgroup::"
           
+      - name: Compute Ccache Keys
+        if: inputs.use_ccache
+        id: ccache-key
+        run: |
+          group="ccache_${{ inputs.kernel_version }}_${{ inputs.use_susfs && 'susfs' || 'nosusfs' }}.${{ inputs.use_droidspaces && 'ds' || 'nods' }}"
+          combo="${group}_${{ inputs.variant }}${{ inputs.use_adios && inputs.kernel_version != '6.1' && '.adios' || '' }}${{ inputs.use_lz4_zstd && inputs.kernel_version == '6.12' && '.lz4zstd' || '' }}${{ inputs.use_nomount && '.nm' || '' }}"
+          sub="${combo}_${{ steps.cfg.outputs.sub_level }}"
+          rev="${sub}_${{ steps.cfg.outputs.asb_date }}${{ steps.cfg.outputs.r_suffix }}"
+          echo "key=${rev}_${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "rev=${rev}_" >> $GITHUB_OUTPUT
+          echo "sub=${sub}_" >> $GITHUB_OUTPUT
+          echo "combo=${combo}_" >> $GITHUB_OUTPUT
+          echo "group=${group}_" >> $GITHUB_OUTPUT
+
       - name: Restore Ccache
         if: inputs.use_ccache
         id: cache-restore
