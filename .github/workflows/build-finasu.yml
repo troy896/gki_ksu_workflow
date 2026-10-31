@@ -1,0 +1,143 @@
+name: Build GKI Kernel (FinaSU)
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_version:
+        description: 'Kernel Version'
+        required: true
+        default: '6.1'
+        type: choice
+        options:
+          - '6.1'
+          - '6.6'
+          - '6.12'
+      finasu_branch:
+        description: 'FinaSU Branch / Ref'
+        required: true
+        default: 'master'
+        type: string
+      enable_susfs:
+        description: 'Enable SUSFS Support'
+        required: true
+        type: boolean
+        default: true
+      enable_ksu_debug:
+        description: 'Enable KSU Debug'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build-finasu:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Toolchains
+        run: |
+          bash .github/scripts/bootstrap_toolchains.sh r510928
+
+      - name: Restore Build Cache
+        uses: ./.github/actions/restore-cache-retry
+        with:
+          path: |
+            ~/.ccache
+            ~/.cache
+          key: finasu-kernel-build-${{ inputs.kernel_version }}-${{ github.sha }}
+          restore-keys: |
+            finasu-kernel-build-${{ inputs.kernel_version }}-
+
+      - name: Download Kernel Source
+        run: |
+          mkdir -p kernel_workspace
+          cd kernel_workspace
+          case "${{ inputs.kernel_version }}" in
+            '6.1')  BRANCH="android14-6.1" ;;
+            '6.6')  BRANCH="android14-6.6" ;;
+            '6.12') BRANCH="android15-6.12" ;;
+          esac
+          git clone --depth=1 --branch "$BRANCH" https://android.googlesource.com/kernel/common common
+
+      - name: Integrate FinaSU Kernel Driver
+        working-directory: kernel_workspace/common
+        run: |
+          echo "[+] Integrating FinaSU via kernel/setup.sh..."
+          curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/${{ inputs.finasu_branch }}/kernel/setup.sh" | bash -s -- "${{ inputs.finasu_branch }}"
+
+      - name: Apply SUSFS Patches (Optional)
+        if: ${{ inputs.enable_susfs }}
+        working-directory: kernel_workspace/common
+        run: |
+          echo "[+] Locating SUSFS kernel patch for ${{ inputs.kernel_version }}..."
+          PATCH_DIR="${{ github.workspace }}/.github/patches/${{ inputs.kernel_version }}"
+          DEINLINED_SCRIPT="${{ github.workspace }}/.github/scripts/susfs_deinlined.sh"
+
+          # Only match the 50_ GKI kernel patch
+          SUSFS_PATCH=$(find "$PATCH_DIR" -name "50_*.patch" -print -quit)
+
+          if [ -n "$SUSFS_PATCH" ] && [ -f "$SUSFS_PATCH" ]; then
+            echo "[+] Selected patch: $SUSFS_PATCH"
+            if [ -f "$DEINLINED_SCRIPT" ]; then
+              echo "[+] Running susfs_deinlined.sh..."
+              bash "$DEINLINED_SCRIPT" "$SUSFS_PATCH"
+              patch -p1 --forward < deinlined.patch || true
+            else
+              echo "[+] Applying patch directly..."
+              patch -p1 --forward < "$SUSFS_PATCH" || true
+            fi
+          else
+            echo "[-] No 50_ patch found in $PATCH_DIR, skipping."
+          fi
+
+      - name: Configure Kernel for FinaSU
+        working-directory: kernel_workspace/common
+        run: |
+          DEFCONFIG="arch/arm64/configs/gki_defconfig"
+
+          cat >> $DEFCONFIG <<-'EOF'
+          CONFIG_KSU=y
+          CONFIG_KPROBES=y
+          CONFIG_KALLSYMS_ALL=y
+          CONFIG_EXT4_FS=y
+          CONFIG_HEADERS_INSTALL=y
+          CONFIG_NOMOUNT=y
+          CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y
+          EOF
+
+          if [ "${{ inputs.enable_susfs }}" = "true" ]; then
+            cat >> $DEFCONFIG <<-'EOF'
+            CONFIG_KSU_SUSFS=y
+            CONFIG_THREAD_INFO_IN_TASK=y
+            EOF
+          fi
+
+          if [ "${{ inputs.enable_ksu_debug }}" = "true" ]; then
+            echo "CONFIG_KSU_DEBUG=y" >> $DEFCONFIG
+          fi
+
+      - name: Compile GKI Kernel
+        working-directory: kernel_workspace/common
+        run: |
+          make -j$(nproc) O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- gki_defconfig
+          make -j$(nproc) O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- KSU_REQUIRE_PREINIT=1 Image.lz4
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Image-${{ inputs.kernel_version }}-FinaSU
+          path: kernel_workspace/common/out/arch/arm64/boot/Image.lz4
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/android14'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG_NAME="finasu-${{ inputs.kernel_version }}-$(date +'%Y%m%d-%H%M%S')"
+          gh release create "$TAG_NAME" kernel_workspace/common/out/arch/arm64/boot/Image.lz4 \
+            --title "GKI FinaSU Build ($TAG_NAME)" \
+            --notes "Automated build of GKI kernel ${{ inputs.kernel_version }} with FinaSU (${{ inputs.finasu_branch }})."
