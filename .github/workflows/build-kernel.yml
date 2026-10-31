@@ -436,6 +436,16 @@ jobs:
           esac
           sed -i "s/strscpy(cmd.name, \"[^\"]*\", sizeof(cmd.name));/strscpy(cmd.name, \"$(echo "$REPO" | cut -d'/' -f1)\", sizeof(cmd.name));/" KernelSU/kernel/supercall/dispatch.c
 
+      - name: Setup fgetpriority
+        working-directory: kernel_workspace/common
+        run: |
+          echo "Setting up fgetpriority"
+          git clone https://github.com/aerath-stuff/fgetpriority.git
+          mkdir -p drivers/fgetpriority
+          cp -r fgetpriority/kernel/* drivers/fgetpriority/
+          grep -q "fgetpriority" drivers/Makefile || echo 'obj-$(CONFIG_FGETPRIORITY) += fgetpriority/' >> drivers/Makefile
+          grep -q "drivers/fgetpriority/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/fgetpriority/Kconfig"' drivers/Kconfig
+          
       - name: Setup SUSFS
         if: inputs.use_susfs
         working-directory: kernel_workspace/common
