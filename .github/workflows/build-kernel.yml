@@ -570,7 +570,7 @@ jobs:
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1++.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android14-6.1/bbrv3hard.patch"
           # patch -p1 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
-          # patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
           # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
           patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-5.10-6.6.patch"
 
@@ -761,7 +761,7 @@ jobs:
           export KBUILD_ABS_SRCTREE=1
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error headers
-          make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error Image
+          make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error Image modules
           [ "${{ inputs.use_ccache }}" = "true" ] && ccache -s || true
 
       - name: Trim Ccache
