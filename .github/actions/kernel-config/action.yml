@@ -224,9 +224,8 @@ runs:
         EOF
         fi
 
-        case "${{ inputs.variant }}" in
-          FinaSU)
-            cat >> $DEFCONFIG <<-'EOF'
+        if [ "${{ inputs.variant }}" = "FinaSU" ]; then
+          cat >> $DEFCONFIG <<-'EOF'
         CONFIG_KSU=y
         CONFIG_KPROBES=y
         CONFIG_KALLSYMS_ALL=y
