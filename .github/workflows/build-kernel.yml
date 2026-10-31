@@ -30,6 +30,10 @@ on:
       use_susfs:
         required: true
         type: boolean
+      finasu_branch:
+        required: false
+        type: string
+        default: 'LyraVoid/FinaSU:master'
       midorisu_kx_branch:
         required: false
         type: string
@@ -384,9 +388,9 @@ jobs:
       - name: Setup KernelSU
         working-directory: kernel_workspace/common
         run: |
-          if [ "${{ inputs.ksu_variant }}" = "FinaSU" ]; then
+          if [ "${{ inputs.variant }}" = "FinaSU" ]; then
             echo "[+] Integrating FinaSU directly from LyraVoid/FinaSU..."
-            curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s -- master
+            curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s master
           else
             echo "[+] Fetching commit count from MidoriSU..."
             COMMIT_COUNT=$(curl -s \
@@ -606,7 +610,9 @@ jobs:
           # patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
-          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
+          if [ "${{ inputs.variant }}" != "FinaSU" ]; then
+            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
+          fi
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd
@@ -670,7 +676,11 @@ jobs:
           mkdir -p "$COMMIT_DIR"
           echo "${CVE_43499_FIXED:-false}" > "$COMMIT_DIR/cve_43499_fixed_${{ inputs.kernel_version }}.${{ inputs.sub_level }}"
           echo "${CVE_64560_FIXED:-false}" > "$COMMIT_DIR/cve_64560_fixed_${{ inputs.kernel_version }}.${{ inputs.sub_level }}"
-          cd KernelSU
+          if [ "${{ inputs.variant }}" = "FinaSU" ]; then
+            cd FinaSU
+          else
+            cd KernelSU
+          fi
           save_ksu_commit() {
             git rev-parse HEAD > "$COMMIT_DIR/${1}_ksu_commit"
             git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/${1}_ksu_date"
@@ -713,6 +723,12 @@ jobs:
               save_ksu_commit midorisu_kx
               echo "${{ inputs.midorisu_kx_branch }}" | cut -d: -f1 | cut -d/ -f1 > "$COMMIT_DIR/midorisu_kx_ksu_author"
               echo "${{ inputs.midorisu_kx_branch }}" | cut -d: -f1 > "$COMMIT_DIR/midorisu_kx_ksu_repo"
+              save_susfs_commit
+              ;;
+            FinaSU)
+              save_ksu_commit finasu
+              echo "${{ inputs.finasu_branch }}" | cut -d: -f1 | cut -d/ -f1 > "$COMMIT_DIR/finasu_ksu_author"
+              echo "${{ inputs.finasu_branch }}" | cut -d: -f1 > "$COMMIT_DIR/finasu_ksu_repo"
               save_susfs_commit
               ;;
             MidoriSU-NX)
