@@ -155,6 +155,8 @@ runs:
         CONFIG_DEBUG_FS=y
         CONFIG_DEBUG_FS_ALLOW_ALL=y
         CONFIG_SCHED_BORE=y
+        CONFIG_FGETPRIORITY=m
+        CONFIG_KALLSYMS_ALL=y
         EOF
         
         case "${{ inputs.variant }}" in
