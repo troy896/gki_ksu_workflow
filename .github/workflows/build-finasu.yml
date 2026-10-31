@@ -39,6 +39,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Toolchains
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           bash .github/scripts/bootstrap_toolchains.sh r510928
 
