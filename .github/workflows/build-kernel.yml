@@ -435,11 +435,19 @@ jobs:
             MidoriSU-RX)
               patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/resuki~1.patch")
               ;;
+
             MidoriSU-XX)
               patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/xx~1.patch")
               ;;
           esac
-          sed -i "s/strscpy(cmd.name, \"[^\"]*\", sizeof(cmd.name));/strscpy(cmd.name, \"$(echo "$REPO" | cut -d'/' -f1)\", sizeof(cmd.name));/" KernelSU/kernel/supercall/dispatch.c
+
+          # Only patch supercall dispatch name for non-FinaSU variants
+          if [ "${{ inputs.variant }}" != "FinaSU" ]; then
+            echo "[+] Patching supercall dispatch command name for MidoriSU..."
+            sed -i "s/strscpy(cmd.name, \"[^\"]*\", sizeof(cmd.name));/strscpy(cmd.name, \"\$(echo "$REPO" | cut -d'/' -f1)\", sizeof(cmd.name));/" KernelSU/kernel/supercall/dispatch.c
+          else
+            echo "[+] FinaSU detected: Skipping supercall dispatch command name modification."
+          fi
 
       - name: Setup fgetpriority
         working-directory: kernel_workspace/common
