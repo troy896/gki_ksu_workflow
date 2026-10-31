@@ -384,31 +384,36 @@ jobs:
       - name: Setup KernelSU
         working-directory: kernel_workspace/common
         run: |
-          echo "[+] Fetching commit count from MidoriSU..."
-          COMMIT_COUNT=$(curl -s \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/midori01/KernelSU/commits?per_page=1" \
-            -I 2>&1 | grep "link:" | grep -oP '&page=\K\d+(?=>; rel="last")')
-          COMMIT_COUNT=${COMMIT_COUNT:-0}
-          KSU_VERSION=$((30999 + COMMIT_COUNT))
-          echo "[+] KSU_VERSION=$KSU_VERSION"
-          mkdir -p commit_info
-          echo "$KSU_VERSION" > commit_info/driver_version
-          export KSU_VERSION
-          case "${{ inputs.variant }}" in
-            MidoriSU-KX) SPEC="${{ inputs.midorisu_kx_branch }}" ;;
-            MidoriSU-NX) SPEC="${{ inputs.midorisu_nx_branch }}" ;;
-            MidoriSU-OX) SPEC="${{ inputs.midorisu_ox_branch }}" ;;
-            MidoriSU-RX) SPEC="${{ inputs.midorisu_rx_branch }}" ;;
-            MidoriSU-XX) SPEC="${{ inputs.midorisu_xx_branch }}" ;;
-          esac
-          IFS=':' read -r REPO BRANCH <<< "$SPEC"
-          echo "REPO=$REPO" >> $GITHUB_ENV
-          git clone --branch "${BRANCH}" "https://github.com/${REPO}.git" KernelSU
-          bash "${{ github.workspace }}/.github/scripts/setup_ksu.sh"
-          ln -sf ../KernelSU/kernel drivers/kernelsu
-          grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
-          grep -q "drivers/kernelsu/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
+          if [ "${{ inputs.ksu_variant }}" = "FinaSU" ]; then
+            echo "[+] Integrating FinaSU directly from LyraVoid/FinaSU..."
+            curl -LSs "https://raw.githubusercontent.com/LyraVoid/FinaSU/master/kernel/setup.sh" | bash -s -- master
+          else
+            echo "[+] Fetching commit count from MidoriSU..."
+            COMMIT_COUNT=$(curl -s \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/midori01/KernelSU/commits?per_page=1" \
+              -I 2>&1 | grep "link:" | grep -oP '&page=\K\d+(?=>; rel="last")')
+            COMMIT_COUNT=${COMMIT_COUNT:-0}
+            KSU_VERSION=$((30999 + COMMIT_COUNT))
+            echo "[+] KSU_VERSION=$KSU_VERSION"
+            mkdir -p commit_info
+            echo "$KSU_VERSION" > commit_info/driver_version
+            export KSU_VERSION
+            case "${{ inputs.variant }}" in
+              MidoriSU-KX) SPEC="${{ inputs.midorisu_kx_branch }}" ;;
+              MidoriSU-NX) SPEC="${{ inputs.midorisu_nx_branch }}" ;;
+              MidoriSU-OX) SPEC="${{ inputs.midorisu_ox_branch }}" ;;
+              MidoriSU-RX) SPEC="${{ inputs.midorisu_rx_branch }}" ;;
+              MidoriSU-XX) SPEC="${{ inputs.midorisu_xx_branch }}" ;;
+            esac
+            IFS=':' read -r REPO BRANCH <<< "$SPEC"
+            echo "REPO=$REPO" >> $GITHUB_ENV
+            git clone --branch "${BRANCH}" "https://github.com/${REPO}.git" KernelSU
+            bash "${{ github.workspace }}/.github/scripts/setup_ksu.sh"
+            ln -sf ../KernelSU/kernel drivers/kernelsu
+            grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
+            grep -q "drivers/kernelsu/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
+          fi
 
       - name: Setup Extra Features and Fixes
         if: inputs.use_extra_features
@@ -761,7 +766,7 @@ jobs:
           export KBUILD_ABS_SRCTREE=1
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error headers
-          make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error Image modules
+          make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error KSU_REQUIRE_PREINIT=1 Image
           [ "${{ inputs.use_ccache }}" = "true" ] && ccache -s || true
 
       - name: Trim Ccache
