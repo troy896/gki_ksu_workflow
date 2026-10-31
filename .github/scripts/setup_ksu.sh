@@ -1,6 +1,12 @@
 #!/bin/bash
 set -eu
 
+# Skip script if running for FinaSU
+if [ "${KSU_VARIANT:-}" = "FinaSU" ]; then
+  echo "[+] FinaSU detected: Skipping MidoriSU-specific manager and branding patches."
+  exit 0
+fi
+
 KSU_VERSION="${KSU_VERSION:-0}"
 
 echo "[+] Setting up manager and version..."
