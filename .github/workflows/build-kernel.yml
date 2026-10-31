@@ -50,6 +50,10 @@ on:
         required: false
         type: string
         default: 'backslashxx/KernelSU:master'
+      finasu_branch:
+        required: false
+        type: string
+        default: 'troy896/FinaSU:master'
       midorisu_rx_hook_mode:
         required: false
         type: string
@@ -401,11 +405,12 @@ jobs:
             MidoriSU-OX) SPEC="${{ inputs.midorisu_ox_branch }}" ;;
             MidoriSU-RX) SPEC="${{ inputs.midorisu_rx_branch }}" ;;
             MidoriSU-XX) SPEC="${{ inputs.midorisu_xx_branch }}" ;;
+            FinaSU) SPEC="${{ inputs.finasu_branch }}" ;;
           esac
           IFS=':' read -r REPO BRANCH <<< "$SPEC"
           echo "REPO=$REPO" >> $GITHUB_ENV
           git clone --branch "${BRANCH}" "https://github.com/${REPO}.git" KernelSU
-          bash "${{ github.workspace }}/.github/scripts/setup_ksu.sh"
+          VARIANT="${{ inputs.variant }}" bash "${{ github.workspace }}/.github/scripts/setup_ksu.sh"
           ln -sf ../KernelSU/kernel drivers/kernelsu
           grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
           grep -q "drivers/kernelsu/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
@@ -472,7 +477,16 @@ jobs:
             done
           fi
           echo "[+] SUSFS patch: 50_add_susfs_in_gki-${PATCH_VER}.patch"
-          bash "$DEINLINED_SCRIPT" "$PATCH_DIR/50_add_susfs_in_gki-${PATCH_VER}.patch" && patch -p1 < deinlined.patch
+          if [ "${{ inputs.variant }}" = "FinaSU" ]; then
+            if ! (bash "$DEINLINED_SCRIPT" "$PATCH_DIR/50_add_susfs_in_gki-${PATCH_VER}.patch" && patch --dry-run -p1 < deinlined.patch >/dev/null 2>&1); then
+                echo "De-inlined patch would fail, applying original patch"
+                patch -p1 < "$PATCH_DIR/50_add_susfs_in_gki-${PATCH_VER}.patch"
+            else
+                patch -p1 < deinlined.patch
+            fi
+          else
+            bash "$DEINLINED_SCRIPT" "$PATCH_DIR/50_add_susfs_in_gki-${PATCH_VER}.patch" && patch -p1 < deinlined.patch
+          fi
           case "${{ inputs.variant }}" in
             MidoriSU-KX)
               patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/kow.patch")
@@ -592,7 +606,9 @@ jobs:
           patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
-          curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
+          if [ "${{ inputs.variant }}" != "FinaSU" ]; then
+            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
+          fi
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
         if: inputs.use_lz4_zstd
@@ -723,6 +739,12 @@ jobs:
               save_ksu_commit midorisu_xx
               echo "${{ inputs.midorisu_xx_branch }}" | cut -d: -f1 | cut -d/ -f1 > "$COMMIT_DIR/midorisu_xx_ksu_author"
               echo "${{ inputs.midorisu_xx_branch }}" | cut -d: -f1 > "$COMMIT_DIR/midorisu_xx_ksu_repo"
+              save_susfs_commit
+              ;;
+            FinaSU)
+              save_ksu_commit finasu
+              echo "${{ inputs.finasu_branch }}" | cut -d: -f1 | cut -d/ -f1 > "$COMMIT_DIR/finasu_ksu_author"
+              echo "${{ inputs.finasu_branch }}" | cut -d: -f1 > "$COMMIT_DIR/finasu_ksu_repo"
               save_susfs_commit
               ;;
           esac
