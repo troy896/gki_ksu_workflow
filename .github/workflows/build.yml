@@ -25,7 +25,7 @@ on:
       ksu_variant:
         description: 'KernelSU Variant'
         required: true
-        default: 'MidoriSU-XX'
+        default: 'FinaSU'
         type: choice
         options:
           - all
