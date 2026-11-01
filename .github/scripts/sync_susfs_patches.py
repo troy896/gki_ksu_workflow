@@ -303,17 +303,41 @@ def config_targets(tree, kmi, kv, config_file, covered):
             continue
         r_ver = rev.get("default_r", "none")
         if r_ver != "none":
-            name = f"{android_ver}-{kv}-{asb_date}_{r_ver}"
+            # Upstream tags use dot separators for sublevels (e.g. android14-6.1.177_r01)
+            # and hyphens for date-based ASBs (e.g. android14-6.1-2024-05_r01).
+            separator = "." if asb_date.isdigit() else "-"
+            name = f"{android_ver}-{kv}{separator}{asb_date}_{r_ver}"
             branch = f"refs/tags/{name}"
-            fetch_missing_ref(tree, branch, branch)
+            try:
+                fetch_missing_ref(tree, branch, branch)
+            except RuntimeError as e:
+                # Fallback: check alternative separator if first attempt fails
+                alt_sep = "-" if separator == "." else "."
+                alt_name = f"{android_ver}-{kv}{alt_sep}{asb_date}_{r_ver}"
+                alt_branch = f"refs/tags/{alt_name}"
+                try:
+                    fetch_missing_ref(tree, alt_branch, alt_branch)
+                    name = alt_name
+                    branch = alt_branch
+                except RuntimeError:
+                    log(f"Skipping unavailable tag ref '{branch}' (and '{alt_branch}'): {e}", level="WARN")
+                    continue
             ref = branch
         else:
             name = f"{android_ver}-{kv}-{asb_date}"
             branch = name
-            fetch_missing_ref(tree, f"refs/heads/{name}", f"refs/remotes/origin/{name}")
+            try:
+                fetch_missing_ref(tree, f"refs/heads/{name}", f"refs/remotes/origin/{name}")
+            except RuntimeError as e:
+                log(f"Skipping unavailable branch ref '{name}': {e}", level="WARN")
+                continue
             ref = f"refs/remotes/origin/{name}"
 
-        mf = run_git(tree, ["show", f"{ref}:Makefile"], check=False).stdout
+        mf_res = run_git(tree, ["show", f"{ref}:Makefile"], check=False)
+        if mf_res.returncode != 0:
+            log(f"Ref '{ref}' has no Makefile, skipping.", level="WARN")
+            continue
+        mf = mf_res.stdout
         m_sub = re.search(r"^SUBLEVEL\s*=\s*(\d+)", mf, re.M)
         if m_sub and m_sub.group(1) != sublevel:
             log(f"Config revision {kv}.{sublevel} points at '{name}' whose Makefile SUBLEVEL is {m_sub.group(1)}; keeping config key.", level="WARN")
