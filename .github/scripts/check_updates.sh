@@ -29,7 +29,7 @@ fi
 if [ -f "$CONFIG_FILE" ]; then
   jq '
     with_entries(select(.key == "6.1")) |
-    .["6.1"].revisions |= with_entries(select((.key | tonumber) == 182))
+    .["6.1"].revisions |= with_entries(select((.key | tonumber) == 177))
   ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 fi
 
@@ -520,7 +520,13 @@ for kv in "${KERNEL_VERSIONS[@]}"; do
     check_tag "$kv" "$date" "$sub" "$r"
   done
   
-  check_lts "$kv" "${SUB_LTS[$kv]}"
+  # Only check LTS if use_lts is explicitly true in kernel_versions.json
+  USE_LTS=$(jq -r ".[\"$kv\"].use_lts // false" "$CONFIG_FILE")
+  if [ "$USE_LTS" = "true" ]; then
+    check_lts "$kv" "${SUB_LTS[$kv]}"
+  else
+    echo "  [+] Skipping LTS check for $kv (use_lts=false; targeted at 177)"
+  fi
 done
 
 if [ "$NEEDS_COMMIT" = true ]; then
