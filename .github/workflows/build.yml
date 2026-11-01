@@ -305,7 +305,7 @@ jobs:
     uses: ./.github/workflows/build-kernel.yml
     with:
       kernel_version: ${{ matrix.kernel_version }}
-      sub_level: ${{ matrix.sub_level }}
+      sub_level: '177'
       variant: ${{ matrix.variant }}
       use_droidspaces: ${{ matrix.droidspaces }}
       use_rekernel: ${{ inputs.use_rekernel }}
