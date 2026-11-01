@@ -1,40 +1,40 @@
 From: github-actions <actions@github.com>
-Date: Sat, 31 Oct 2026 17:13:46 +0000
+Date: Sun, 01 Nov 2026 00:13:31 +0000
 Subject: [PATCH] SUSFS inline hooks for gki-android14-6.1-lts
 X-Kernel-Target-Branch: android14-6.1-lts
 X-Kernel-Target-Commit: fcab623b3d2b0107e56b44e4e791f9a1cc5ad0ff
 X-SUSFS-Source-Ref: origin/gki-android14-6.1
-X-SUSFS-Source-Commit: 13b554130c7c62250315bd0f8eb3fa925b8a663e
+X-SUSFS-Source-Commit: 59a0ce06d7574c8d31695acf9c0ad24410784f30
 
 ---
  block/ioprio.c                 |  22 +++-
  drivers/input/input.c          |  10 ++
  fs/Makefile                    |   2 +
- fs/exec.c                      |  68 ++++++++++
- fs/namei.c                     | 238 ++++++++++++++++++++++++++++++++++
- fs/namespace.c                 | 255 ++++++++++++++++++++++++++++++++++++
- fs/notify/fdinfo.c             |  78 +++++++++++
- fs/open.c                      |  28 ++++
+ fs/exec.c                      |  68 +++++++++++
+ fs/namei.c                     | 238 +++++++++++++++++++++++++++++++++++++
+ fs/namespace.c                 | 255 ++++++++++++++++++++++++++++++++++++++++
+ fs/notify/fdinfo.c             |  78 +++++++++++++
+ fs/open.c                      |  28 +++++
  fs/proc/base.c                 |  24 ++++
- fs/proc/bootconfig.c           |  13 ++
- fs/proc/fd.c                   |  71 ++++++++++
- fs/proc/task_mmu.c             |  70 ++++++++++
- fs/proc_namespace.c            | 178 +++++++++++++++++++++++++
+ fs/proc/bootconfig.c           |  13 +++
+ fs/proc/fd.c                   |  71 +++++++++++
+ fs/proc/task_mmu.c             |  70 +++++++++++
+ fs/proc_namespace.c            | 178 ++++++++++++++++++++++++++++
  fs/read_write.c                |  10 ++
- fs/readdir.c                   | 111 ++++++++++++++++
- fs/stat.c                      |  83 +++++++++++-
- fs/statfs.c                    |  81 ++++++++++++
+ fs/readdir.c                   | 111 ++++++++++++++++++
+ fs/stat.c                      |  83 ++++++++++++-
+ fs/statfs.c                    |  81 +++++++++++++
  fs/super.c                     |  24 ++++
  kernel/kallsyms.c              |  31 +++++
  kernel/reboot.c                |  12 ++
- kernel/sys.c                   |  28 ++++
+ kernel/sys.c                   |  28 +++++
  mm/memory.c                    |   8 ++
- security/selinux/avc.c         |  21 ++-
- security/selinux/hooks.c       | 166 +++++++++++++++++++++++-
- security/selinux/selinuxfs.c   | 149 +++++++++++++++++++++
- security/selinux/ss/services.c | 285 +++++++++++++++++++++++++++++++++++++++++
+ security/selinux/avc.c         |  21 +++-
+ security/selinux/hooks.c       | 166 +++++++++++++++++++++++++-
+ security/selinux/selinuxfs.c   | 149 +++++++++++++++++++++++
+ security/selinux/ss/services.c | 260 +++++++++++++++++++++++++++++++++++++++++
  security/selinux/status.c      |  24 ++++
- 27 files changed, 2085 insertions(+), 5 deletions(-)
+ 27 files changed, 2060 insertions(+), 5 deletions(-)
 
 diff --git a/block/ioprio.c b/block/ioprio.c
 index 32a456b45..ea1e2b4d0 100644
@@ -2927,17 +2927,16 @@ index 755325a94..8347aff59 100644
  {
  	struct selinux_fs_info *fsi = file_inode(file)->i_sb->s_fs_info;
 diff --git a/security/selinux/ss/services.c b/security/selinux/ss/services.c
-index 5e7bd32db..28e377071 100644
+index 5e7bd32db..5a7910725 100644
 --- a/security/selinux/ss/services.c
 +++ b/security/selinux/ss/services.c
-@@ -70,6 +70,14 @@
+@@ -70,6 +70,13 @@
  
  #include <trace/hooks/selinux.h>
  
 +#ifdef CONFIG_KSU_SUSFS
 +extern bool susfs_is_current_ksu_domain(void);
 +extern bool susfs_is_sus_type_rcu(u32 sid);
-+extern int susfs_add_sus_type(const char *secctx, u32 type_value);
 +extern void susfs_spoof_avd_allowed_rcu(u32 s_type, u32 t_type, u32 c_type, u32 *avd_allowed);
 +extern struct selinux_state selinux_state;
 +#endif // #ifdef CONFIG_KSU_SUSFS
@@ -2945,7 +2944,7 @@ index 5e7bd32db..28e377071 100644
  struct convert_context_args {
  	struct selinux_state *state;
  	struct policydb *oldp;
-@@ -2242,11 +2250,22 @@ void selinux_policy_commit(struct selinux_state *state,
+@@ -2242,11 +2249,22 @@ void selinux_policy_commit(struct selinux_state *state,
  			pr_info("SELinux: Enabling MLS support...\n");
  	}
  
@@ -2968,7 +2967,7 @@ index 5e7bd32db..28e377071 100644
  	seqno = newpolicy->latest_granting;
  
  	/* Install the new policy. */
-@@ -3137,8 +3156,17 @@ int security_set_bools(struct selinux_state *state, u32 len, int *values)
+@@ -3137,8 +3155,17 @@ int security_set_bools(struct selinux_state *state, u32 len, int *values)
  	/* Re-evaluate the conditional rules in the copy */
  	evaluate_cond_nodes(&newpolicy->policydb);
  
@@ -2986,7 +2985,7 @@ index 5e7bd32db..28e377071 100644
  	seqno = newpolicy->latest_granting;
  
  	/* Install the new policy */
-@@ -4082,3 +4110,260 @@ int security_read_state_kernel(struct selinux_state *state,
+@@ -4082,3 +4109,236 @@ int security_read_state_kernel(struct selinux_state *state,
  	}
  	return err;
  }
@@ -3222,32 +3221,7 @@ index 5e7bd32db..28e377071 100644
 +	avd->allowed = 0xffffffff;
 +	goto out;
 +}
-+
-+void susfs_add_sus_type_by_type_name(char *type_name)
-+{
-+	struct selinux_policy *policy;
-+	struct policydb *policydb;
-+    struct type_datum *type;
-+
-+	if (!type_name || *type_name == '\0')
-+		return;
-+
-+	if (!selinux_initialized(&selinux_state))
-+		return;
-+
-+	rcu_read_lock();
-+	policy = rcu_dereference(selinux_state.policy);
-+	policydb = &policy->policydb;
-+	type = symtab_search(&policydb->p_types, type_name);
-+	if (!type)
-+		goto unlock;
-+
-+	susfs_add_sus_type(type_name, type->value);
-+unlock:
-+	rcu_read_unlock();
-+}
 +#endif // #ifdef CONFIG_KSU_SUSFS
-\ No newline at end of file
 diff --git a/security/selinux/status.c b/security/selinux/status.c
 index 4bc8f8099..eb27150ba 100644
 --- a/security/selinux/status.c
