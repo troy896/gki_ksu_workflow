@@ -183,7 +183,13 @@ check_tag() {
   echo "=== Checking $kv tag $asb_date (current: sub=$current_sub r=$current_r) ==="
 
   local android_ver=$(jq -r ".[\"$kv\"].android_version" "$CONFIG_FILE")
-  local prefix="${android_ver}-${kv}-${asb_date}"
+  
+  # If asb_date is a date (YYYY-MM), use hyphen; otherwise match sublevel tag with dot (.177)
+  if [[ "$asb_date" =~ ^[0-9]{4}-[0-9]{2} ]]; then
+    local prefix="${android_ver}-${kv}-${asb_date}"
+  else
+    local prefix="${android_ver}-${kv}.${current_sub}"
+  fi
 
   if [[ "$current_r" == "none" ]]; then
     local head_commit=$(get_ref_commit "refs/heads/${prefix}")
@@ -326,7 +332,7 @@ check_tag() {
 
   local r_suffix=""
   [[ "$new_r" != "none" ]] && r_suffix="_$new_r"
-  local tar_name="${android_ver}-${kv}-${asb_date}${r_suffix}.tar.gz"
+  local tar_name="${latest_tag}.tar.gz"
 
   if [[ "$new_r" == "$current_r" && "$new_sub" == "$current_sub" ]]; then
     local existing_commit=$(jq -r ".[\"$kv\"].revisions[\"${current_sub}\"].commit // \"\"" "$CONFIG_FILE")
