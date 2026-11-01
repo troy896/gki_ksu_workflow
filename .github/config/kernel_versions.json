@@ -5,7 +5,7 @@
     "use_lts": false,
     "revisions": {
       "177": {
-        "asb_date": "none",
+        "asb_date": "177",
         "default_r": "r00",
         "supported_r": [
           "r00"
