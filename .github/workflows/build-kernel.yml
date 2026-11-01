@@ -283,7 +283,7 @@ jobs:
                   KERNEL_BASE_URL="$MIDORI_MIRROR"
                 fi
               else
-                tag="${{ steps.cfg.outputs.android_version }}-${{ inputs.kernel_version }}-${{ steps.cfg.outputs.asb_date }}_${{ steps.cfg.outputs.r_version }}"
+                tag="${{ steps.cfg.outputs.android_version }}-${{ inputs.kernel_version }}.${{ steps.cfg.outputs.asb_date }}_${{ steps.cfg.outputs.r_version }}"
                 KERNEL_TAR="${tag}.tar.gz"
                 if [ "${{ inputs.source_mirror }}" = "google" ]; then
                   KERNEL_BASE_URL="https://android.googlesource.com/kernel/common/+archive/refs/tags"
