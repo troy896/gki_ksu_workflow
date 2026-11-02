@@ -480,34 +480,38 @@ jobs:
           git -C "$SUSFS_DIR" checkout "${SUSFS_COMMIT:-gki-$KMI_VERSION}"
           cp "$SUSFS_DIR"/kernel_patches/fs/* fs/
           cp "$SUSFS_DIR"/kernel_patches/include/linux/* include/linux/
-          PATCH_VER="$KMI_VERSION"
-          if [ -f "$PATCH_DIR/50_add_susfs_in_gki-$KMI_VERSION.${{ inputs.sub_level }}.patch" ]; then
-            PATCH_VER="$KMI_VERSION.${{ inputs.sub_level }}"
-          elif [ "${{ inputs.kernel_version }}" = "6.12" ]; then
-            for p in $(ls -rv "$PATCH_DIR"/50_add_susfs_in_gki-${KMI_VERSION}.*.patch 2>/dev/null); do
-              sub="${p%.patch}"; sub="${sub##*.}"
-              [ "$sub" -le "${{ inputs.sub_level }}" ] && PATCH_VER="$KMI_VERSION.$sub" && break
-            done
+          if [ "${{ inputs.variant }}" = "FinaSU" ]; then
+             patch -p1 --fuzz=3 < "$SUSFS_DIR"/kernel_patches/50_add_susfs_in_gki-android14-6.1.patch"
+          else
+            PATCH_VER="$KMI_VERSION"
+            if [ -f "$PATCH_DIR/50_add_susfs_in_gki-$KMI_VERSION.${{ inputs.sub_level }}.patch" ]; then
+              PATCH_VER="$KMI_VERSION.${{ inputs.sub_level }}"
+            elif [ "${{ inputs.kernel_version }}" = "6.12" ]; then
+              for p in $(ls -rv "$PATCH_DIR"/50_add_susfs_in_gki-${KMI_VERSION}.*.patch 2>/dev/null); do
+                sub="${p%.patch}"; sub="${sub##*.}"
+                [ "$sub" -le "${{ inputs.sub_level }}" ] && PATCH_VER="$KMI_VERSION.$sub" && break
+              done
+            fi
+            echo "[+] SUSFS patch: 50_add_susfs_in_gki-${PATCH_VER}.patch"
+            bash "$DEINLINED_SCRIPT" "$PATCH_DIR/50_add_susfs_in_gki-${PATCH_VER}.patch" && patch -p1 < deinlined.patch
+            case "${{ inputs.variant }}" in
+              MidoriSU-KX)
+                patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/kow.patch")
+                ;;
+              MidoriSU-NX)
+                patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/next.patch")
+                ;;
+              MidoriSU-OX)
+                patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/official.patch")
+                ;;
+              MidoriSU-RX)
+                patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/resuki.patch")
+                ;;
+              MidoriSU-XX)
+                patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/xx.patch")
+                ;;
+            esac
           fi
-          echo "[+] SUSFS patch: 50_add_susfs_in_gki-${PATCH_VER}.patch"
-          bash "$DEINLINED_SCRIPT" "$PATCH_DIR/50_add_susfs_in_gki-${PATCH_VER}.patch" && patch -p1 < deinlined.patch
-          case "${{ inputs.variant }}" in
-            MidoriSU-KX)
-              patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/kow.patch")
-              ;;
-            MidoriSU-NX)
-              patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/next.patch")
-              ;;
-            MidoriSU-OX)
-              patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/official.patch")
-              ;;
-            MidoriSU-RX)
-              patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/resuki.patch")
-              ;;
-            MidoriSU-XX)
-              patch -p1 -d KernelSU < <(curl -sSfL "https://github.com/midori01/KernelSU/commit/xx.patch")
-              ;;
-          esac
 
       - name: Setup Manual Hooks (RX/XX only)
         if: >-
