@@ -140,6 +140,9 @@ runs:
         CONFIG_HEADERS_INSTALL=y
         # CONFIG_SECTION_MISMATCH_WARN_ONLY is not set
         CONFIG_SCHED_BORE=y
+        CONFIG_KALLSYMS=y
+        CONFIG_EXT4_FS=y
+        CONFIG_FGETPRIORITY=y
         EOF
         
         case "${{ inputs.variant }}" in
