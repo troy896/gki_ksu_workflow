@@ -448,7 +448,8 @@ jobs:
           # Only patch supercall dispatch name for non-FinaSU variants
           if [ "${{ inputs.variant }}" != "FinaSU" ]; then
             echo "[+] Patching supercall dispatch command name for MidoriSU..."
-            sed -i "s/strscpy(cmd.name, \"[^\"]*\", sizeof(cmd.name));/strscpy(cmd.name, \"\$(echo "$REPO" | cut -d'/' -f1)\", sizeof(cmd.name));/" KernelSU/kernel/supercall/dispatch.c
+            AUTHOR=$(echo "$REPO" | cut -d'/' -f1)
+            sed -i "s|strscpy(cmd.name, \"[^\"]*\", sizeof(cmd.name));|strscpy(cmd.name, \"${AUTHOR}\", sizeof(cmd.name));|" KernelSU/kernel/supercall/dispatch.c
           else
             echo "[+] FinaSU detected: Skipping supercall dispatch command name modification."
           fi
