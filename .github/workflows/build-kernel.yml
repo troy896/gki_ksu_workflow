@@ -589,14 +589,20 @@ jobs:
       - name: Apply Unicode Bypass Fix
         working-directory: kernel_workspace/common
         run: |
-          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1++.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/android14-6.1/bbrv3hard.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
-          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
-          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-5.10-6.6.patch"
 
+      - name: Apply Other Patches
+        working-directory: kernel_workspace/common
+        run: |
+          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/android14-6.1/bbrv3hard.patch"
+          # patch -p1 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
+          if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
+            patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
+          fi
+          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-5.10-6.6.patch"
+          
       - name: Apply libbpf glibc 2.43 Fix
         working-directory: kernel_workspace/common
         run: |
