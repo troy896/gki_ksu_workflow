@@ -455,7 +455,6 @@ jobs:
 
       - name: Setup fgetpriority
         working-directory: kernel_workspace/common
-        if: inputs.use_droidspaces
         run: |
           echo "Setting up fgetpriority"
           git clone https://github.com/aerath-stuff/fgetpriority.git
