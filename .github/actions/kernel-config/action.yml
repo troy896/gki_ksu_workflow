@@ -147,6 +147,7 @@ runs:
         CONFIG_KALLSYMS=y
         CONFIG_EXT4_FS=y
         CONFIG_FGETPRIORITY=y
+        CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER=y
         EOF
         
         case "${{ inputs.variant }}" in
