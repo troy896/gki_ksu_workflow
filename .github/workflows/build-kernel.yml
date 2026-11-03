@@ -456,16 +456,14 @@ jobs:
       - name: Setup fgetpriority
         working-directory: kernel_workspace/common
         run: |
-          echo "[+] Setting up fgetpriority (In-Tree Built-in)..."
-          git clone --depth=1 https://github.com/aerath-stuff/fgetpriority.git
+          echo "[+] Setting up fgetpriority from backslashxx (lkm-raw-branch)..."
+          git clone --depth=1 --branch lkm-raw-branch https://github.com/backslashxx/fgetpriority.git
           mkdir -p drivers/fgetpriority
           cp -r fgetpriority/kernel/* drivers/fgetpriority/
 
-          # 1. Convert obj-m (module) to obj-y (built-in) inside fgetpriority Makefile
-          sed -i 's/obj-m/obj-y/g' drivers/fgetpriority/Makefile || true
-
-          # 2. Add obj-y directly to drivers/Makefile so Kbuild always compiles it into Image
-          grep -q "fgetpriority" drivers/Makefile || echo 'obj-y += fgetpriority/' >> drivers/Makefile
+          # 1. Wire into drivers/Makefile and drivers/Kconfig
+          grep -q "fgetpriority" drivers/Makefile || echo 'obj-$(CONFIG_FGETPRIORITY) += fgetpriority/' >> drivers/Makefile
+          grep -q "drivers/fgetpriority/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/fgetpriority/Kconfig"' drivers/Kconfig
 
       - name: Setup SUSFS
         if: inputs.use_susfs
@@ -618,7 +616,7 @@ jobs:
           # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
           # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
           if [ "${{ inputs.variant }}" != "FinaSU" ]; then
-            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
+            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
           fi
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
