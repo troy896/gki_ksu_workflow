@@ -520,6 +520,23 @@ jobs:
             esac
           fi
 
+      - name: Apply MidoriSU-XX KernelPatch Compatibility Fixes
+        if: inputs.variant == 'MidoriSU-XX' && inputs.midorisu_xx_hook_mode == 'branch link hijacking'
+        working-directory: kernel_workspace/common
+        run: |
+          for name in kernelsu-xx-bl-execve-fallback kernelsu-xx-mirror-skip-foreign; do
+            FIX="${{ github.workspace }}/.github/patches/$name.patch"
+            if patch -p1 -d KernelSU --forward --dry-run < "$FIX" > /dev/null 2>&1; then
+              patch -p1 -d KernelSU --forward < "$FIX"
+            elif patch -p1 -d KernelSU --reverse --dry-run < "$FIX" > /dev/null 2>&1; then
+              echo "$name already present in MidoriSU-XX, skipping."
+            else
+              echo "::error::$name no longer applies to MidoriSU-XX; without it KernelPatch can break preinit, lose syscall hooks or crash execve. Update .github/patches/$name.patch."
+              patch -p1 -d KernelSU --forward --dry-run < "$FIX" || true
+              exit 1
+            fi
+          done
+          
       - name: Setup Manual Hooks (RX/XX only)
         if: >-
           (inputs.variant == 'MidoriSU-XX' && inputs.midorisu_xx_hook_mode == 'manual') ||
@@ -601,7 +618,6 @@ jobs:
         run: |
           # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/android14-6.1/bbrv3hard.patch"
-          # patch -p1 < "${{ github.workspace }}/.github/patches/0020-sched-fair-Disable-CACHE_HOT_BUDDY-to-leverage-Dynam.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
           if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
             patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
@@ -619,14 +635,12 @@ jobs:
         run: |
           python3 "${{ github.workspace }}/.github/scripts/fix_pcm_wait_time.py"
 
-      - name: Apply ADIOS I/O Scheduler (6.6/6.12 only)
+      - name: Apply ADIOS I/O Scheduler & BORE 6.1
         if: inputs.use_adios
         working-directory: kernel_workspace/common
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/adios3.3.0.patch"
           patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
-          # sed -i -E 's/^([[:space:]]*)u64 slice = normalized_sysctl_sched_base_slice;/\1u64 slice = sysctl_sched_base_slice;/' kernel/sched/fair.c || true
-          # sed -i '/unsigned int sysctl_sched_base_slice           = nsecs_per_tick;/a static unsigned int normalized_sysctl_sched_base_slice = nsecs_per_tick;' kernel/sched/fair.c
           if [ "${{ inputs.variant }}" != "FinaSU" ]; then
             curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
           fi
