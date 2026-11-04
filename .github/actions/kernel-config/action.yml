@@ -54,6 +54,10 @@ inputs:
     description: 'Set to "true" to enable the LZ4/ZSTD ZRAM backends (kernel 6.12 only)'
     required: false
     default: 'false'
+  use_16k_pages:
+    description: 'Set to "true" to enable 16KB page size'
+    required: false
+    default: 'false'
   localversion:
     description: 'Kernel Localversion String'
     required: true
@@ -252,6 +256,13 @@ runs:
           cat >> $DEFCONFIG <<-'EOF'
         CONFIG_MQ_IOSCHED_ADIOS=y
         CONFIG_MQ_IOSCHED_DEFAULT_ADIOS=y
+        EOF
+        fi
+        
+        if [ "${{ inputs.use_16k_pages }}" = "true" ]; then
+          cat >> $DEFCONFIG <<-'EOF'
+        # CONFIG_ARM64_4K_PAGES is not set
+        CONFIG_ARM64_16K_PAGES=y
         EOF
         fi
         
