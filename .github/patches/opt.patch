@@ -453,6 +453,19 @@ index 770bb04b7ed8b..093fad92e8e51 100644
  }
  EXPORT_SYMBOL_GPL(pm_system_wakeup);
  
+diff --git a/kernel/sched/features.h b/kernel/sched/features.h
+index ee7f23c76..39c7777eb 100644
+--- a/kernel/sched/features.h
++++ b/kernel/sched/features.h
+@@ -30,7 +30,7 @@ SCHED_FEAT(LAST_BUDDY, true)
+  * Consider buddies to be cache hot, decreases the likeliness of a
+  * cache buddy being migrated away, increases cache locality.
+  */
+-SCHED_FEAT(CACHE_HOT_BUDDY, true)
++SCHED_FEAT(CACHE_HOT_BUDDY, false)
+ 
+ /*
+  * Allow wakeup-time preemption of the current task:
 diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
 index 13dbb405dc31f..814bed9f9ab1f 100644
 --- a/drivers/pci/pci.c
