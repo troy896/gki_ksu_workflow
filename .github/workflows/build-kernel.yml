@@ -462,8 +462,8 @@ jobs:
       - name: Setup fgetpriority
         working-directory: kernel_workspace/common
         run: |
-          echo "[+] Setting up fgetpriority from backslashxx (lkm-raw-branch)..."
-          git clone --depth=1 --branch lkm-raw-branch https://github.com/backslashxx/fgetpriority.git
+          echo "[+] Setting up fgetpriority..."
+          git clone --depth=1 https://github.com/aerath-stuff/fgetpriority.git
           mkdir -p drivers/fgetpriority
           cp -r fgetpriority/kernel/* drivers/fgetpriority/
 
