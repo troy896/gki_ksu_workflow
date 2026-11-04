@@ -62,6 +62,10 @@ on:
         required: false
         type: string
         default: 'branch link hijacking'
+      midorisu_xx_kpatch_compat:
+        required: false
+        type: boolean
+        default: false
       ksu_debug:
         required: false
         type: boolean
@@ -520,8 +524,8 @@ jobs:
             esac
           fi
 
-      - name: Apply MidoriSU-XX KernelPatch Compatibility Fixes
-        if: inputs.variant == 'MidoriSU-XX' && inputs.midorisu_xx_hook_mode == 'branch link hijacking'
+      - name: Apply KPatch Compatibility Fixes (XX Branch Link only)
+        if: inputs.variant == 'MidoriSU-XX' && inputs.midorisu_xx_hook_mode == 'branch link hijacking' && inputs.midorisu_xx_kpatch_compat
         working-directory: kernel_workspace/common
         run: |
           for name in kernelsu-xx-bl-execve-fallback kernelsu-xx-mirror-skip-foreign; do
