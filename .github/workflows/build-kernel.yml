@@ -642,7 +642,7 @@ jobs:
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/adios3.3.0.patch"
           patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
           if [ "${{ inputs.variant }}" != "FinaSU" ]; then
-            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s dev
+            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
           fi
 
       - name: Apply LZ4/ZSTD ZRAM (6.12 only)
