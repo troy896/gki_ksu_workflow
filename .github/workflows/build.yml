@@ -97,6 +97,11 @@ on:
         required: true
         default: false
         type: boolean
+      use_fgetpriority:
+        description: 'fgetpriority'
+        required: true
+        default: true
+        type: boolean
       use_extra_features:
         description: 'Extra Features & Fixes'
         required: true
@@ -320,6 +325,7 @@ jobs:
       use_droidspaces: ${{ matrix.droidspaces }}
       use_rekernel: ${{ inputs.use_rekernel }}
       use_vpnhide: ${{ inputs.use_vpnhide }}
+      use_fgetpriority: ${{ inputs.use_fgetpriority }}
       use_adios: ${{ inputs.use_adios }}
       use_lz4_zstd: ${{ inputs.use_lz4_zstd }}
       use_16k_pages: ${{ inputs.use_16k_pages }}
@@ -498,6 +504,13 @@ jobs:
             local date=$(cat "${file%_commit}_date")
             out "vpnhide_line=- **${label}**: [\`$(echo $sha | cut -c1-7)\`](https://github.com/soranerai/vpnhide_next_backend/commit/$sha) \`$date\`"
           }
+          fgetpriority_line() {
+            local label=$1 file=$2
+            [ -f "$file" ] || return 0
+            local sha=$(cat "$file")
+            local date=$(cat "${file%_commit}_date")
+            out "fgetpriority_line=- **${label}**: [\`$(echo $sha | cut -c1-7)\`](https://github.com/aerath-stuff/fgetpriority/commit/$sha) \`$date\`"
+          }
           if [ -f "commit_info/susfs_commit" ]; then
             sha=$(cat commit_info/susfs_commit)
             out "susfs_commit=\`$(short_sha commit_info/susfs_commit)\`"
@@ -524,6 +537,7 @@ jobs:
           rekernel_line "Re:Kernel" commit_info/rekernel_commit
           rekernel_x_line "Re:Kernel-X" commit_info/rekernel_x_commit
           vpnhide_line "VPNHide Next" commit_info/vpnhide_commit
+          fgetpriority_line "fgetpriority" commit_info/fgetpriority_commit
           ksu_line MidoriSU-KX "$(cat commit_info/midorisu_kx_ksu_repo 2>/dev/null)" commit_info/midorisu_kx_ksu_commit
           ksu_line MidoriSU-NX "$(cat commit_info/midorisu_nx_ksu_repo 2>/dev/null)" commit_info/midorisu_nx_ksu_commit
           ksu_line MidoriSU-OX "$(cat commit_info/midorisu_ox_ksu_repo 2>/dev/null)" commit_info/midorisu_ox_ksu_commit
@@ -547,6 +561,7 @@ jobs:
             ${{ steps.ksu_info.outputs.rekernel_line }}
             ${{ steps.ksu_info.outputs.rekernel_x_line }}
             ${{ steps.ksu_info.outputs.vpnhide_line }}
+            ${{ steps.ksu_info.outputs.fgetpriority_line }}
             - **KSU Driver**: `${{ steps.ksu_info.outputs.driver_version || env.KSUD_VERSION }}`　**KSU Daemon (ksud)**: `${{ env.KSUD_VERSION }}`
             - **Manager**: `${{ env.MIDORISU_APK }}`
             > **Spoofed Kernel Build Info**

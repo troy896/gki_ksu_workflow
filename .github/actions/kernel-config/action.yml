@@ -46,6 +46,10 @@ inputs:
     description: 'Set to "true" to inject VPNHide configs'
     required: false
     default: 'false'
+  use_fgetpriority:
+    description: 'Set to "true" to inject fgetpriority configs'
+    required: false
+    default: 'false'
   use_adios:
     description: 'Set to "true" to inject ADIOS'
     required: false
@@ -249,6 +253,12 @@ runs:
           cat >> $DEFCONFIG <<-'EOF'
         CONFIG_BLK_DEV_ZRAM=y
         CONFIG_ZRAM_DEF_COMP_LZ4=y
+        EOF
+        fi
+
+        if [ "${{ inputs.use_fgetpriority }}" = "true" ]; then
+          cat >> $DEFCONFIG <<-'EOF'
+        CONFIG_FGETPRIORITY=y
         EOF
         fi
         

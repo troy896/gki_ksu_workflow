@@ -23,6 +23,10 @@ on:
         required: false
         type: boolean
         default: false
+      use_fgetpriority:
+        required: false
+        type: boolean
+        default: true
       use_extra_features:
         required: false
         type: boolean
@@ -656,6 +660,16 @@ jobs:
 
           sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "modules.bzl"
 
+      - name: Setup fgetpriority
+        if: inputs.use_fgetpriority
+        working-directory: kernel_workspace/common
+        run: |
+          git clone --filter=blob:none https://github.com/aerath-stuff/fgetpriority.git fgetpriority
+          FGP_TAG=$(git -C fgetpriority describe --tags $(git -C fgetpriority rev-list --tags -n 1)) && git -C fgetpriority checkout "tags/$FGP_TAG"
+          ln -sfn ../fgetpriority/kernel drivers/fgetpriority
+          grep -q "fgetpriority" drivers/Makefile || echo 'obj-$(CONFIG_FGETPRIORITY) += fgetpriority/' >> drivers/Makefile
+          grep -q "drivers/fgetpriority/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/fgetpriority/Kconfig"' drivers/Kconfig
+
       - name: Determine Kernel Localversion
         id: localversion
         working-directory: kernel_workspace/common
@@ -686,6 +700,7 @@ jobs:
           use_droidspaces: ${{ inputs.use_droidspaces }}
           use_rekernel: ${{ inputs.use_rekernel }}
           use_vpnhide: ${{ inputs.use_vpnhide }}
+          use_fgetpriority: ${{ inputs.use_fgetpriority }}
           use_adios: ${{ inputs.use_adios }}
           use_lz4_zstd: ${{ inputs.use_lz4_zstd }}
           use_16k_pages: ${{ inputs.use_16k_pages }}
@@ -742,6 +757,14 @@ jobs:
               popd > /dev/null
             fi
           }
+          save_fgetpriority_commit() {
+            if [ "${{ inputs.use_fgetpriority }}" = "true" ] && [ -d "${{ github.workspace }}/kernel_workspace/common/fgetpriority" ]; then
+              pushd "${{ github.workspace }}/kernel_workspace/common/fgetpriority" > /dev/null
+              git rev-parse HEAD > "$COMMIT_DIR/fgetpriority_commit"
+              git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/fgetpriority_date"
+              popd > /dev/null
+            fi
+          }
           case "${{ inputs.variant }}" in
             MidoriSU-KX)
               save_ksu_commit midorisu_kx
@@ -783,6 +806,7 @@ jobs:
           save_rekernel_commit
           save_rekernel_x_commit
           save_vpnhide_commit
+          save_fgetpriority_commit
 
       - name: Upload Commit Info
         uses: actions/upload-artifact@v7
