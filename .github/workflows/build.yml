@@ -402,14 +402,14 @@ jobs:
           fi
           echo "TOOLKIT_LINK=$link" >> $GITHUB_ENV
 
-      - name: Resolve MidoriSU Manager APK Link
+      - name: Download MidoriSU Manager APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download --repo midori01/KernelSU --pattern "*.apk" --dir release_zips 2>/dev/null || true
-          apk=$(ls release_zips/*.apk 2>/dev/null | head -n 1)
-          url="${asset#* }"
-          echo "MIDORISU_APK_LINK=${apk:+[\`$apk\`]($url)}" >> $GITHUB_ENV
+          gh release download --repo midori01/KernelSU --pattern "MidoriSU_*.apk" --dir release_zips 2>/dev/null || true
+          apk=$(ls release_zips/MidoriSU_*.apk 2>/dev/null | head -n 1)
+          echo "MIDORISU_APK=$(basename "$apk" 2>/dev/null)" >> $GITHUB_ENV
+
           echo "KSUD_VERSION=$(echo "$apk" | grep -oP '\d+(?=-release\.apk$)' || echo "unknown")" >> $GITHUB_ENV
 
       - name: Resolve VPNHide Links
@@ -548,7 +548,7 @@ jobs:
             ${{ steps.ksu_info.outputs.rekernel_x_line }}
             ${{ steps.ksu_info.outputs.vpnhide_line }}
             - **KSU Driver**: `${{ steps.ksu_info.outputs.driver_version || env.KSUD_VERSION }}`　**KSU Daemon (ksud)**: `${{ env.KSUD_VERSION }}`
-            - **Manager**: ${{ env.MIDORISU_APK_LINK || '❌' }}
+            - **Manager**: `${{ env.MIDORISU_APK }}`
             > **Spoofed Kernel Build Info**
             ${{ env.RELEASE_UNAME }}
             > - **Time**: `${{ needs.setup.outputs.build_timestamp }}`
@@ -564,6 +564,7 @@ jobs:
             - **Compiler**: `clang-${{ env.CLANG_VERSION }}`${{ env.RUST_VERSION && format('　**Rust**: `{0}`', env.RUST_VERSION) || '' }}
           files: |
             release_zips/*.zip
+            release_zips/*.apk
           prerelease: ${{ inputs.release_type == 'pre-release' }}
 
   cleanup:

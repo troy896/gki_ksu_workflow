@@ -463,18 +463,6 @@ jobs:
             echo "[+] FinaSU detected: Skipping supercall dispatch command name modification."
           fi
 
-      - name: Setup fgetpriority
-        working-directory: kernel_workspace/common
-        run: |
-          echo "[+] Setting up fgetpriority..."
-          git clone --depth=1 https://github.com/aerath-stuff/fgetpriority.git
-          mkdir -p drivers/fgetpriority
-          cp -r fgetpriority/kernel/* drivers/fgetpriority/
-
-          # 1. Wire into drivers/Makefile and drivers/Kconfig
-          grep -q "fgetpriority" drivers/Makefile || echo 'obj-$(CONFIG_FGETPRIORITY) += fgetpriority/' >> drivers/Makefile
-          grep -q "drivers/fgetpriority/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/fgetpriority/Kconfig"' drivers/Kconfig
-
       - name: Setup SUSFS
         if: inputs.use_susfs
         working-directory: kernel_workspace/common
