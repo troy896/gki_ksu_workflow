@@ -25,7 +25,7 @@ on:
       ksu_variant:
         description: 'KernelSU Variant'
         required: true
-        default: 'FinaSU'
+        default: 'MidoriSU-XX'
         type: choice
         options:
           - all
@@ -140,7 +140,7 @@ on:
       release_type:
         description: 'Release Type'
         required: true
-        default: 'no-release'
+        default: 'release'
         type: choice
         options:
           - release
