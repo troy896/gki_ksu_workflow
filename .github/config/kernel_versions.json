@@ -2,7 +2,7 @@
   "6.1": {
     "android_version": "android14",
     "default_sub_level": "177",
-    "use_lts": false,
+    "use_lts": true,
     "revisions": {
       "177": {
         "asb_date": "177",
