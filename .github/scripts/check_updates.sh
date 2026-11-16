@@ -25,11 +25,12 @@ else
   esac
 fi
 
-# Ensure kernel_versions.json only retains 6.12 and revisions with sub-level == 81
+# Ensure kernel_versions.json only retains 6.1 with the pinned 177 tag revision and the LTS revision
+PINNED_SUB=177
 if [ -f "$CONFIG_FILE" ]; then
-  jq '
+  jq --argjson pinned "$PINNED_SUB" '
     with_entries(select(.key == "6.1")) |
-    .["6.1"].revisions |= with_entries(select((.key | tonumber) == 189))
+    .["6.1"].revisions |= with_entries(select((.key | tonumber) == $pinned or .value.asb_date == "lts"))
   ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 fi
 
@@ -417,14 +418,14 @@ check_lts() {
   echo ""
   echo "=== Checking $kv LTS (current sub=$current_sub) ==="
 
-  if [[ ! "$current_sub" =~ ^[0-9]+$ ]]; then
-    echo "  Invalid current_sub: $current_sub"
-    return
-  fi
-
   local use_lts=$(jq -r ".[\"$kv\"].use_lts // false" "$CONFIG_FILE")
   local android_ver=$(jq -r ".[\"$kv\"].android_version" "$CONFIG_FILE")
   local branch_name="${android_ver}-${kv}-lts"
+
+  if [[ ! "$current_sub" =~ ^[0-9]+$ ]]; then
+    echo "  No LTS revision in JSON yet, bootstrapping from $branch_name..."
+    current_sub=""
+  fi
 
   local head_commit=$(get_ref_commit "refs/heads/${branch_name}")
   local old_commit=$(jq -r ".[\"$kv\"].revisions[\"${current_sub}\"].commit // \"\"" "$CONFIG_FILE")
@@ -472,6 +473,10 @@ check_lts() {
       new_sub=$(get_sublevel_from_head "$branch_name")
     fi
     if [[ -z "$new_sub" || ! "$new_sub" =~ ^[0-9]+$ ]]; then
+      if [[ -z "$current_sub" ]]; then
+        echo "  ERROR: Failed to extract SUBLEVEL while bootstrapping LTS, JSON NOT updated."
+        return
+      fi
       echo "  WARNING: Failed to extract SUBLEVEL, keeping current sub=$current_sub"
       new_sub="$current_sub"
     fi
@@ -480,12 +485,12 @@ check_lts() {
     local commit_date=$(get_commit_date "$head_commit")
 
     if [[ "$use_lts" == "true" && "$new_sub" != "$current_sub" ]]; then
+      # Keep default_sub_level pinned (177); the LTS revision is built alongside it.
       jq --arg kv "$kv" \
          --arg sub "$new_sub" \
          --arg commit "$head_commit" \
          --arg commit_date "$commit_date" \
-         '.[$kv].default_sub_level = $sub |
-          .[$kv].revisions |= with_entries(select(.value.asb_date != "lts")) |
+         '.[$kv].revisions |= with_entries(select(.value.asb_date != "lts")) |
           .[$kv].revisions[$sub] = {"asb_date": "lts", "default_r": "r00", "supported_r": ["r00"], "commit": $commit, "commit_date": $commit_date}' \
          "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
       echo "  Updated JSON sub=$new_sub."
