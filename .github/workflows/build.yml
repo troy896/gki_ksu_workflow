@@ -68,32 +68,12 @@ on:
         default: true
         type: boolean
       use_adios:
-        description: 'ADIOS I/O Scheduler (6.6 & 6.12 only)'
+        description: 'ADIOS I/O Scheduler'
         required: true
         default: true
         type: boolean
-      use_lz4_zstd:
-        description: 'LZ4/ZSTD ZRAM (6.12.23 only)'
-        required: true
-        default: false
-        type: boolean
       use_16k_pages:
         description: '16KB Page Size'
-        required: true
-        default: false
-        type: boolean
-      use_droidspaces:
-        description: 'Droidspaces & NTSync'
-        required: true
-        default: false
-        type: boolean
-      use_rekernel:
-        description: 'Re:Kernel(-X)'
-        required: true
-        default: false
-        type: boolean
-      use_vpnhide:
-        description: 'VPNHide Next'
         required: true
         default: false
         type: boolean
@@ -287,11 +267,9 @@ jobs:
 
               add_variant() {
                 local v=$1 has_susfs=$2
-                local ds="false"
                 local sus="false"
-                [ "${{ inputs.use_droidspaces }}" = "true" ] && ds="true"
                 [ "$has_susfs" = "true" ] && [ "${{ inputs.enable_susfs }}" = "true" ] && sus="true"
-                matrix=$(echo "$matrix" | jq -c --arg kv "$kv" --arg sub_level "$sub_level" --arg variant "$v" --argjson ds "$ds" --argjson sus "$sus" '.include += [{"kernel_version":$kv,"sub_level":$sub_level,"variant":$variant,"droidspaces":$ds,"susfs":$sus}]')
+                matrix=$(echo "$matrix" | jq -c --arg kv "$kv" --arg sub_level "$sub_level" --arg variant "$v" --argjson sus "$sus" '.include += [{"kernel_version":$kv,"sub_level":$sub_level,"variant":$variant,"susfs":$sus}]')
               }
 
               [[ "$variant" =~ ^(all|MidoriSU-KX)$ ]] && add_variant MidoriSU-KX true
@@ -307,7 +285,7 @@ jobs:
           echo "build_matrix=$matrix" >> $GITHUB_OUTPUT
 
   build:
-    name: "${{ matrix.kernel_version }}.${{ matrix.sub_level }} - ${{ matrix.variant }}${{ matrix.susfs && (matrix.droidspaces && ' (SUSFS DS)' || ' (SUSFS)') || (matrix.droidspaces && ' (DS)' || '') }}${{ inputs.use_adios && matrix.kernel_version != '6.1' && ' (ADIOS)' || '' }}${{ inputs.use_lz4_zstd && matrix.kernel_version == '6.12' && ' (LZ4/ZSTD)' || '' }}${{ inputs.use_16k_pages && ' (16KB)' || '' }}"
+    name: "${{ matrix.kernel_version }}.${{ matrix.sub_level }} - ${{ matrix.variant }}${{ matrix.susfs && ' (SUSFS)' || '' }}${{ inputs.use_adios && ' (ADIOS)' || '' }}${{ inputs.use_16k_pages && ' (16KB)' || '' }}"
     needs: setup
     if: |
       always() &&
@@ -322,12 +300,8 @@ jobs:
       kernel_version: ${{ matrix.kernel_version }}
       sub_level: ${{ matrix.sub_level }}
       variant: ${{ matrix.variant }}
-      use_droidspaces: ${{ matrix.droidspaces }}
-      use_rekernel: ${{ inputs.use_rekernel }}
-      use_vpnhide: ${{ inputs.use_vpnhide }}
       use_fgetpriority: ${{ inputs.use_fgetpriority }}
       use_adios: ${{ inputs.use_adios }}
-      use_lz4_zstd: ${{ inputs.use_lz4_zstd }}
       use_16k_pages: ${{ inputs.use_16k_pages }}
       use_extra_features: ${{ inputs.use_extra_features }}
       use_susfs: ${{ matrix.susfs }}
@@ -419,26 +393,6 @@ jobs:
 
           echo "KSUD_VERSION=$(echo "$apk" | grep -oP '\d+(?=-release\.apk$)' || echo "unknown")" >> $GITHUB_ENV
 
-      - name: Resolve VPNHide Links
-        if: inputs.use_vpnhide == true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          asset_url() {
-            gh release view --repo "$1" --json assets --jq ".assets[] | select(.name == \"$2\") | .url" 2>/dev/null | head -n 1 || true
-          }
-          bridge=$(asset_url soranerai/vpnhide_next vpnhide-bridge.zip)
-          if [ -z "$bridge" ]; then
-            bridge=$(asset_url soranerai/vpnhide_next_backend vpnhide-bridge.zip)
-          apk=$(asset_url soranerai/vpnhide_next vpnhide.apk)
-          links=""
-          if [ -n "$bridge" ]; then
-            links="[\`vpnhide-bridge.zip\`]($bridge)"
-          fi
-          if [ -n "$apk" ]; then
-            links="${links:+$links, }[\`vpnhide.apk\`]($apk)"
-          echo "VPNHIDE_LINKS=$links" >> $GITHUB_ENV
-          
       - name: Resolve NoMount Module Link
         if: inputs.enable_susfs == true
         env:
@@ -484,27 +438,6 @@ jobs:
             [ -f "$file" ] && [[ "$variant" =~ ^(all|$tag)$ ]] || return 0
             out "${tag,,}=- **$tag**: [\`$(short_sha "$file")\`](https://github.com/$repo/commit/$(cat "$file")) \`$(cat "${file%_commit}_date")\`"
           }
-          rekernel_line() {
-            local label=$1 file=$2
-            [ -f "$file" ] || return 0
-            local sha=$(cat "$file")
-            local date=$(cat "${file%_commit}_date")
-            out "rekernel_line=- **${label}**: [\`$(echo $sha | cut -c1-7)\`](https://github.com/Sakion-Team/Re-Kernel/commit/$sha) \`$date\`"
-          }
-          rekernel_x_line() {
-            local label=$1 file=$2
-            [ -f "$file" ] || return 0
-            local sha=$(cat "$file")
-            local date=$(cat "${file%_commit}_date")
-            out "rekernel_x_line=- **${label}**: [\`$(echo $sha | cut -c1-7)\`](https://github.com/myflavor/ReKernel-X/commit/$sha) \`$date\`"
-          }
-          vpnhide_line() {
-            local label=$1 file=$2
-            [ -f "$file" ] || return 0
-            local sha=$(cat "$file")
-            local date=$(cat "${file%_commit}_date")
-            out "vpnhide_line=- **${label}**: [\`$(echo $sha | cut -c1-7)\`](https://github.com/soranerai/vpnhide_next_backend/commit/$sha) \`$date\`"
-          }
           fgetpriority_line() {
             local label=$1 file=$2
             [ -f "$file" ] || return 0
@@ -535,9 +468,6 @@ jobs:
           if [ -f "commit_info/driver_version" ]; then
             out "driver_version=$(cat commit_info/driver_version)"
           fi
-          rekernel_line "Re:Kernel" commit_info/rekernel_commit
-          rekernel_x_line "Re:Kernel-X" commit_info/rekernel_x_commit
-          vpnhide_line "VPNHide Next" commit_info/vpnhide_commit
           fgetpriority_line "fgetpriority" commit_info/fgetpriority_commit
           ksu_line MidoriSU-KX "$(cat commit_info/midorisu_kx_ksu_repo 2>/dev/null)" commit_info/midorisu_kx_ksu_commit
           ksu_line MidoriSU-NX "$(cat commit_info/midorisu_nx_ksu_repo 2>/dev/null)" commit_info/midorisu_nx_ksu_commit
@@ -559,9 +489,6 @@ jobs:
             ${{ steps.ksu_info.outputs.midorisu-rx }}
             ${{ steps.ksu_info.outputs.midorisu-xx }}
             ${{ steps.ksu_info.outputs.susfs_url && format('- **SUSFS4KSU**: [{0}]({1}) {2}', steps.ksu_info.outputs.susfs_commit, steps.ksu_info.outputs.susfs_url, steps.ksu_info.outputs.susfs_date) || '' }}
-            ${{ steps.ksu_info.outputs.rekernel_line }}
-            ${{ steps.ksu_info.outputs.rekernel_x_line }}
-            ${{ steps.ksu_info.outputs.vpnhide_line }}
             ${{ steps.ksu_info.outputs.fgetpriority_line }}
             - **KSU Driver**: `${{ steps.ksu_info.outputs.driver_version || env.KSUD_VERSION }}`　**KSU Daemon (ksud)**: `${{ env.KSUD_VERSION }}`
             - **Manager**: `${{ env.MIDORISU_APK }}`
@@ -571,11 +498,10 @@ jobs:
             > - **Builder**: `${{ needs.setup.outputs.build_user }}@${{ needs.setup.outputs.build_host }}`
             - **Ccache Speedup**: ${{ inputs.use_ccache && '✅' || '❌' }}　**Unicode Bypass Fix**: ✅
             - **CVE-2026-43499 Fix**: ${{ steps.ksu_info.outputs.cve_43499_fixed == 'true' && '✅' || format('❌ ({0})', steps.ksu_info.outputs.cve_43499_failed_subs) }}　**CVE-2026-64560 Fix**: ${{ steps.ksu_info.outputs.cve_64560_fixed == 'true' && '✅' || format('❌ ({0})', steps.ksu_info.outputs.cve_64560_failed_subs) }}
-            - **ADIOS I/O Scheduler**: ${{ inputs.use_adios && matrix.kv != '6.1' && '✅' || '❌' }}　**LZ4/ZSTD ZRAM**: ${{ inputs.use_lz4_zstd && matrix.kv == '6.12' && '✅' || '❌' }}　**Page Size**: `${{ inputs.use_16k_pages && '16KB' || '4KB' }}`
-            - **Droidspaces**: ${{ inputs.use_droidspaces && '✅' || '❌' }}　**NTSync**: ${{ inputs.use_droidspaces && '✅' || '❌' }}　**TMPFS**: ✅
+            - **ADIOS I/O Scheduler**: ${{ inputs.use_adios && '✅' || '❌' }}　**Page Size**: `${{ inputs.use_16k_pages && '16KB' || '4KB' }}`
+            - **TMPFS**: ✅
             - **TCP BBR**: ✅　**IPSET**: ✅　**Enhanced NAT**: ✅
             - **KSU Toolkit**: ${{ env.TOOLKIT_LINK && format('✅ ({0})', env.TOOLKIT_LINK) || '❌' }}
-            - **VPNHide Next**: ${{ env.VPNHIDE_LINKS && format('✅ ({0})', env.VPNHIDE_LINKS) || (inputs.use_vpnhide && '✅' || '❌') }}
             - **NoMount**: ${{ env.NOMOUNT_LINKS && format('✅ ({0})', env.NOMOUNT_LINKS) || (inputs.use_nomount && '✅' || '❌') }}
             - **Compiler**: `clang-${{ env.CLANG_VERSION }}`${{ env.RUST_VERSION && format('　**Rust**: `{0}`', env.RUST_VERSION) || '' }}
           files: |

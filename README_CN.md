@@ -40,28 +40,18 @@
 
 ## 📦 构建变体
 
-| 变体 | SUSFS | Droidspaces | Hook 类型 |
-| :--- | :---: | :---: | :--- |
-| [MidoriSU-KX](https://github.com/KOWX712/KernelSU) | ❌ | ❌ | `Kprobes` |
-| [MidoriSU-KX-DS](https://github.com/KOWX712/KernelSU) | ❌ | ✅ | `Kprobes` |
-| [MidoriSU-KX-SUSFS](https://github.com/KOWX712/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-KX-SUSFS-DS](https://github.com/KOWX712/KernelSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-NX](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | ❌ | `Tracepoint` |
-| [MidoriSU-NX-DS](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | ✅ | `Tracepoint` |
-| [MidoriSU-NX-SUSFS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-NX-SUSFS-DS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-OX](https://github.com/tiann/KernelSU) | ❌ | ❌ | `Kprobes` |
-| [MidoriSU-OX-DS](https://github.com/tiann/KernelSU) | ❌ | ✅ | `Kprobes` |
-| [MidoriSU-OX-SUSFS](https://github.com/tiann/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-OX-SUSFS-DS](https://github.com/tiann/KernelSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-RX](https://github.com/ReSukiSU/ReSukiSU) | ❌ | ❌ | `Manual` |
-| [MidoriSU-RX-DS](https://github.com/ReSukiSU/ReSukiSU) | ❌ | ✅ | `Manual` |
-| [MidoriSU-RX-SUSFS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-RX-SUSFS-DS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-XX](https://github.com/backslashxx/KernelSU) | ❌ | ❌ | `Branch Link` |
-| [MidoriSU-XX-DS](https://github.com/backslashxx/KernelSU) | ❌ | ✅ | `Branch Link` |
-| [MidoriSU-XX-SUSFS](https://github.com/backslashxx/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-XX-SUSFS-DS](https://github.com/backslashxx/KernelSU) | ✅ | ✅ | `De-inlined` |
+| 变体 | SUSFS | Hook 类型 |
+| :--- | :---: | :--- |
+| [MidoriSU-KX](https://github.com/KOWX712/KernelSU) | ❌ | `Kprobes` |
+| [MidoriSU-KX-SUSFS](https://github.com/KOWX712/KernelSU) | ✅ | `De-inlined` |
+| [MidoriSU-NX](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | `Tracepoint` |
+| [MidoriSU-NX-SUSFS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | `De-inlined` |
+| [MidoriSU-OX](https://github.com/tiann/KernelSU) | ❌ | `Kprobes` |
+| [MidoriSU-OX-SUSFS](https://github.com/tiann/KernelSU) | ✅ | `De-inlined` |
+| [MidoriSU-RX](https://github.com/ReSukiSU/ReSukiSU) | ❌ | `Manual` |
+| [MidoriSU-RX-SUSFS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | `De-inlined` |
+| [MidoriSU-XX](https://github.com/backslashxx/KernelSU) | ❌ | `Branch Link` |
+| [MidoriSU-XX-SUSFS](https://github.com/backslashxx/KernelSU) | ✅ | `De-inlined` |
 
 > \* **MidoriSU-RX 和 MidoriSU-XX 的 Hook 类型：** 可分别通过 `midorisu_rx_hook_mode` 与 `midorisu_xx_hook_mode` 运行时配置。
 > - `midorisu_rx_hook_mode` — `manual`（默认）/ `tracepoint`
@@ -71,17 +61,17 @@
 >   - `manual` — 通过 `scope-min-manual-hooks-v2.3.patch` 打入的手动 hook
 
 > [!TIP]
-> **矩阵构建编排：** 矩阵始终为每个变体产出恰好 **1 个构件** — 启用的功能（Droidspaces 和/或 SUSFS）会应用到该单一构件上。选择全部 5 个变体时，每个内核版本的 **每个子版本产生 5 次构建**。从 `kernel_version` 下拉菜单中选择 `all` 将并行编译 6.1、6.6 和 6.12 的所有子版本，在默认配置下共 **40 个并发 Job**。
+> **矩阵构建编排：** 矩阵始终为每个变体产出恰好 **1 个构件** — 启用的功能（SUSFS）会应用到该单一构件上。选择全部 5 个变体时，每个内核版本的 **每个子版本产生 5 次构建**。从 `kernel_version` 下拉菜单中选择 `all` 将并行编译 6.1、6.6 和 6.12 的所有子版本，在默认配置下共 **40 个并发 Job**。
 
 ---
 
 ## 📱 MidoriSU 管理器
 
-[**MidoriSU**](https://github.com/midori01/KernelSU) 是面向所有 MidoriSU 内核变体的官方配套应用。基于 [**KowSU**](https://github.com/KOWX712/KernelSU) 进行了深度定制与功能扩展，无缝兼容整个 MidoriSU 系列 — **KX、NX、OX、RX、XX** — 包括所有 SUSFS 与 Droidspaces 组合。
+[**MidoriSU**](https://github.com/midori01/KernelSU) 是面向所有 MidoriSU 内核变体的官方配套应用。基于 [**KowSU**](https://github.com/KOWX712/KernelSU) 进行了深度定制与功能扩展，无缝兼容整个 MidoriSU 系列 — **KX、NX、OX、RX、XX** — 包括所有 SUSFS 组合。
 
 | 功能 | 描述 |
 | :--- | :--- |
-| **现代化 Bento 仪表盘** | 便当盒式响应式仪表盘与弹性按压缩放回弹动效；动态显示 KSU 驱动名称（原生驱动名与 LKM 动态识别）、罗马数字 UAPI 版本、Hook 类型、SUSFS 版本、Droidspaces 版本、Re:Kernel(-X) 版本、内核构建时间与 OEM 解锁状态。 |
+| **现代化 Bento 仪表盘** | 便当盒式响应式仪表盘与弹性按压缩放回弹动效；动态显示 KSU 驱动名称（原生驱动名与 LKM 动态识别）、罗马数字 UAPI 版本、Hook 类型、SUSFS 版本、内核构建时间与 OEM 解锁状态。 |
 | **内置 SUSFS 管理** | 内核工具中原生集成的 SUSFS 控制面板，取代 susfs4ksu 模块：支持 SUS Path、SUS Kstat、SUS Map 与 Open Redirect 规则；内核版本（`uname`）与启动参数（`/proc/cmdline` / `bootconfig`）伪装；AVC 日志伪装、SUS 挂载隐藏，以及对 `getpriority` / `ioprio` 探测隐藏指定应用的优先级 UID 过滤。规则由 `ksud` 在开机时自动应用（兼容晚加载的 SUSFS LKM），并提供每次开机的应用报告、配置备份与恢复，以及从现有 susfs4ksu 模块一键导入。同时支持内核内置 SUSFS 与 susfs4ksu-lkm。 |
 | **双主题与外观定制** | 深度支持 Material 3 Expressive 与 Miuix 两套 UI 风格及实时主题预览；配备 Material 悬浮胶囊底部导航栏、重复点击底栏快速回顶、模块更新红点提示，内置切换器可在 **MidoriSU**、**KowSU** 与 **官方 KernelSU** 之间即时切换应用名称、图标及开屏主题。 |
 | **OTA Payload 抽取与 ARB 分析** | 支持从本地或在线 OTA ZIP / `payload.bin` 固件中秒级提取 `boot.img` 分区镜像，支持 HTTP Range Request 免下载数十 GB 完整包；内置防回滚（ARB）安全指数分析与内核版本检测。 |
@@ -117,12 +107,8 @@
 | **源码镜像** | 在 Google 官方 AOSP 镜像或自托管镜像之间选择，用于内核源码和工具链下载。 |
 | **SUSFS** | SUSFS 内核补丁自动从上游同步，并为所有支持的子版本生成，包括 `kernel_versions.json` 中固定的非 LTS 修订版本。单个 `susfs_commit` 输入控制所有变体的 SUSFS 版本。SUSFS 直接在 MidoriSU 管理器中配置，发布中不再附带单独的 susfs4ksu 模块。 |
 | **KSU 工具箱** | 自动从 nightly.link 获取最新的 [ksu_toolkit](https://github.com/backslashxx/ksu_toolkit) 模块，并在发布说明中附上下载链接。 |
-| **Droidspaces** | 通过 [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) 提供容器支持 — SYSVIPC、IPC_NS、PID_NS、DEVTMPFS、NTSync 和网络。通过 `use_droidspaces` 开关按变体启用。 |
-| **Re:Kernel(-X)** | 集成的 [Re:Kernel](https://github.com/Sakion-Team/Re-Kernel) 和 [Re:Kernel-X](https://github.com/myflavor/ReKernel-X) 模块直接编译进内核。提供 tombstone 冻结恢复、网络触发解冻和 binder 异步清理。通过 `use_rekernel` 开关控制。 |
-| **VPNHide Next** | 通过 In-tree kpatch (`CONFIG_VPNHIDE=y`) 集成 [VPNHide Next](https://github.com/soranerai/vpnhide_next_backend)，在内核层隐藏 VPN 网络接口、路由规则和套接字描述符，无需依赖动态 LKM。在发布说明中附上配套的 `vpnhide-bridge.zip` 模块与管理器 APK (`vpnhide.apk`) 的上游下载链接。通过 `use_vpnhide` 开关控制。 |
 | **Unicode 绕过修复** | 始终启用。修补内核 Unicode 规范化，以防止通过非标准 Unicode 编码进行文件系统绕过攻击。 |
 | **ADIOS I/O 调度器** | 可选集成 [ADIOS](https://github.com/firelzrd/adios)，并作为内核的内置默认多队列 I/O 调度器。通过 `use_adios` 开关启用。 |
-| **LZ4/ZSTD ZRAM 后端** | 可选将内核中的 LZ4 和 ZSTD 实现更新为官方 LZ4 1.10.0 与 Zstandard 1.5.7 版本，并为 kernel 6.12 (仅在6.12.23测试通过) 启用 ZRAM 后端。通过 `use_lz4_zstd` 开关控制；6.1 和 6.6 构建保持不变。 |
 | **Ccache** | 编译器缓存集成，带有 60 秒等待守卫以确保依赖安装，保证跨工作流运行的健壮加速增量重建。 |
 | **伪装构建元数据** | 可为编译镜像自定义 `kernel name`、`build timestamp`、`user` 和 `host` 字符串。 |
 
@@ -146,7 +132,7 @@
 > [!NOTE]
 > **兼容性说明：**
 > - 以上设备均运行 Android 16+，搭载 GKI 内核（6.1/6.6/6.12）
-> - SUSFS 与 Droidspaces 功能已在所有设备系列上完成测试
+> - SUSFS 功能已在所有设备系列上完成测试
 > - 原厂系统用户建议通过 MidoriSU 管理器或 Kernel Flasher 刷入内核
 
 > [!TIP]

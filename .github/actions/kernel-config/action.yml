@@ -34,28 +34,12 @@ inputs:
     description: 'Set to "true" to inject SUSFS configs'
     required: false
     default: 'true'
-  use_droidspaces:
-    description: 'Set to "true" to inject Droidspaces configs'
-    required: false
-    default: 'false'
-  use_rekernel:
-    description: 'Set to "true" to inject ReKernel configs'
-    required: false
-    default: 'false'
-  use_vpnhide:
-    description: 'Set to "true" to inject VPNHide configs'
-    required: false
-    default: 'false'
   use_fgetpriority:
     description: 'Set to "true" to inject fgetpriority configs'
     required: false
     default: 'false'
   use_adios:
     description: 'Set to "true" to inject ADIOS'
-    required: false
-    default: 'false'
-  use_lz4_zstd:
-    description: 'Set to "true" to enable the LZ4/ZSTD ZRAM backends (kernel 6.12 only)'
     required: false
     default: 'false'
   use_16k_pages:
@@ -221,20 +205,6 @@ runs:
         EOF
         fi
         
-        if [ "${{ inputs.use_droidspaces }}" = "true" ]; then
-          cat >> $DEFCONFIG <<-'EOF'
-        CONFIG_NOMOUNT=y
-        EOF
-        fi
-        
-        if [ "${{ inputs.use_rekernel }}" = "true" ]; then
-          cat >> $DEFCONFIG <<-'EOF'
-        CONFIG_REKERNEL=y
-        CONFIG_REKERNEL_NETWORK=y
-        CONFIG_REKERNEL_LEGACY_NETLINK=y
-        EOF
-        fi
-
         if [ "${{ inputs.variant }}" = "FinaSU" ]; then
           cat >> $DEFCONFIG <<-'EOF'
         CONFIG_KSU=y
@@ -248,14 +218,6 @@ runs:
         EOF
         fi
         
-        # Built-in zram is only needed when the LZ4/ZSTD step removes zram.ko/zsmalloc.ko from modules.bzl
-        if [ "${{ inputs.use_lz4_zstd }}" = "true" ]; then
-          cat >> $DEFCONFIG <<-'EOF'
-        CONFIG_BLK_DEV_ZRAM=y
-        CONFIG_ZRAM_DEF_COMP_LZ4=y
-        EOF
-        fi
-
         if [ "${{ inputs.use_fgetpriority }}" = "true" ]; then
           cat >> $DEFCONFIG <<-'EOF'
         CONFIG_FGETPRIORITY=y

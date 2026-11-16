@@ -12,17 +12,6 @@ on:
       variant:
         required: true
         type: string
-      use_droidspaces:
-        required: true
-        type: boolean
-      use_rekernel:
-        required: false
-        type: boolean
-        default: true
-      use_vpnhide:
-        required: false
-        type: boolean
-        default: false
       use_fgetpriority:
         required: false
         type: boolean
@@ -82,10 +71,6 @@ on:
         type: boolean
         default: true
       use_adios:
-        required: false
-        type: boolean
-        default: false
-      use_lz4_zstd:
         required: false
         type: boolean
         default: false
@@ -152,10 +137,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 300
     env:
-      DS_SUFFIX: ${{ inputs.use_droidspaces && '-DS' || '' }}
       SUSFS_SUFFIX: ${{ inputs.use_susfs && '-SUSFS' || '' }}
-      ADIOS_SUFFIX: ${{ inputs.use_adios && inputs.kernel_version != '6.1' && '-ADIOS' || '' }}
-      ZRAM_SUFFIX: ${{ inputs.use_lz4_zstd && inputs.kernel_version == '6.12' && '-LZ4ZSTD' || '' }}
+      ADIOS_SUFFIX: ${{ inputs.use_adios && '-ADIOS' || '' }}
       PAGE_SUFFIX: ${{ inputs.use_16k_pages && '-16K' || '' }}
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPILERCHECK: content
@@ -225,8 +208,8 @@ jobs:
         if: inputs.use_ccache
         id: ccache-key
         run: |
-          group="ccache_${{ inputs.kernel_version }}_${{ inputs.use_susfs && 'susfs' || 'nosusfs' }}.${{ inputs.use_droidspaces && 'ds' || 'nods' }}"
-          combo="${group}_${{ inputs.variant }}${{ inputs.use_adios && inputs.kernel_version != '6.1' && '.adios' || '' }}${{ inputs.use_lz4_zstd && inputs.kernel_version == '6.12' && '.lz4zstd' || '' }}${{ inputs.use_16k_pages && '.16k' || '' }}${{ inputs.use_nomount && '.nm' || '' }}"
+          group="ccache_${{ inputs.kernel_version }}_${{ inputs.use_susfs && 'susfs' || 'nosusfs' }}"
+          combo="${group}_${{ inputs.variant }}${{ inputs.use_adios && '.adios' || '' }}${{ inputs.use_16k_pages && '.16k' || '' }}${{ inputs.use_nomount && '.nm' || '' }}"
           sub="${combo}_${{ steps.cfg.outputs.sub_level }}"
           rev="${sub}_${{ steps.cfg.outputs.asb_date }}${{ steps.cfg.outputs.r_suffix }}"
           echo "key=${rev}_${{ github.run_id }}" >> $GITHUB_OUTPUT
@@ -548,43 +531,6 @@ jobs:
               ;;
           esac
 
-      - name: Setup Droidspaces
-        if: inputs.use_droidspaces
-        working-directory: kernel_workspace/common
-        run: |
-          patch -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/fix_sysvipc_kabi.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/ntsync_base_compat.patch"
-
-      - name: Setup ReKernel
-        if: inputs.use_rekernel
-        working-directory: kernel_workspace/common
-        run: |
-          REKERNEL_DIR="${{ github.workspace }}/ReKernel"
-          REKERNEL_X_DIR="${{ github.workspace }}/ReKernel_X"
-          git clone --filter=blob:none https://github.com/Sakion-Team/Re-Kernel "$REKERNEL_DIR"
-          git clone --filter=blob:none https://github.com/myflavor/ReKernel-X "$REKERNEL_X_DIR"
-          REKERNEL_TAG=$(git -C "$REKERNEL_DIR" describe --tags $(git -C "$REKERNEL_DIR" rev-list --tags -n 1)) && git -C "$REKERNEL_DIR" checkout "tags/$REKERNEL_TAG"
-          REKERNEL_X_TAG=$(git -C "$REKERNEL_X_DIR" describe --tags $(git -C "$REKERNEL_X_DIR" rev-list --tags -n 1)) && git -C "$REKERNEL_X_DIR" checkout "tags/$REKERNEL_X_TAG"
-          cp -r "$REKERNEL_DIR"/LKM-Source drivers/rekernel
-          sed -i 's/depends on MODULES/depends on KSU/' drivers/rekernel/Kconfig
-          sed -i 's/obj-m := rekernel.o/obj-$(CONFIG_REKERNEL) += rekernel.o/' drivers/rekernel/Makefile
-          echo 'obj-$(CONFIG_REKERNEL) += rekernel/' >> drivers/Makefile
-          grep -q "drivers/rekernel/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/rekernel/Kconfig"' drivers/Kconfig
-          cp -r "$REKERNEL_X_DIR"/LKM-Source drivers/rekernel_x
-          sed -i 's/\bstart_rekernel\b/rkx_start/g; s/\bexit_rekernel\b/rkx_exit/g; s/\bsendMessage\b/rkx_sendMessage/g; s/\bnet_uid_add\b/rkx_net_uid_add/g; s/\bnet_uid_del\b/rkx_net_uid_del/g; s/\bregister_signal\b/rkx_register_signal/g; s/\bunregister_signal\b/rkx_unregister_signal/g; s/\bregister_netfilter\b/rkx_register_netfilter/g; s/\bunregister_netfilter\b/rkx_unregister_netfilter/g; s/\bregister_binder\b/rkx_register_binder/g; s/\bunregister_binder\b/rkx_unregister_binder/g' drivers/rekernel_x/*.{c,h}
-          sed -i 's/obj-m += rekernel_x.o/obj-y += rekernel_x.o/' drivers/rekernel_x/Makefile
-          echo 'obj-y += rekernel_x/' >> drivers/Makefile
-          echo "RKX_VERSION=v$REKERNEL_X_TAG" >> $GITHUB_ENV
-
-      - name: Setup VPNHide Next
-        if: inputs.use_vpnhide
-        working-directory: kernel_workspace/common
-        run: |
-          VPNHIDE_DIR="${{ github.workspace }}/vpnhide_next"
-          git clone --filter=blob:none https://github.com/soranerai/vpnhide_next_backend.git "$VPNHIDE_DIR"
-          VPNHIDE_TAG=$(git -C "$VPNHIDE_DIR" describe --tags $(git -C "$VPNHIDE_DIR" rev-list --tags -n 1)) && git -C "$VPNHIDE_DIR" checkout "tags/$VPNHIDE_TAG"
-          bash "$VPNHIDE_DIR/kpatch/scripts/apply.sh" . "${{ steps.cfg.outputs.kmi_version }}"
-          
       - name: Apply CVE Fixes
         working-directory: kernel_workspace/common
         run: |
@@ -631,7 +577,7 @@ jobs:
         run: |
           python3 "${{ github.workspace }}/.github/scripts/fix_pcm_wait_time.py"
 
-      - name: Apply ADIOS I/O Scheduler & BORE 6.1
+      - name: Apply ADIOS I/O Scheduler & BORE
         if: inputs.use_adios
         working-directory: kernel_workspace/common
         run: |
@@ -640,25 +586,6 @@ jobs:
           if [ "${{ inputs.variant }}" != "FinaSU" ]; then
             curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
           fi
-
-      - name: Apply LZ4/ZSTD ZRAM (6.12 only)
-        if: inputs.use_lz4_zstd
-        run: |
-          ZZH_PATCHES="${{ github.workspace }}/zzhpatches"
-          echo "升级 LZ4..."
-          git clone https://github.com/zzh20188/GKI_KernelSU_SUSFS.git zzhpatches
-          cd kernel_workspace/common
-          rm -f lib/lz4/lz4_compress.c lib/lz4/lz4_decompress.c lib/lz4/lz4defs.h lib/lz4/lz4hc_compress.c
-
-          cp -r $ZZH_PATCHES/zram/lz4/* ./lib/lz4/
-          cp -r $ZZH_PATCHES/zram/include/linux/* ./include/linux/
-          bash $ZZH_PATCHES/zram/apply_lz4_neon.sh
-
-          if [ -f "fs/f2fs/Makefile" ] && ! grep -qF "f2fs-\$(CONFIG_F2FS_IOSTAT) += iostat.o" "fs/f2fs/Makefile"; then
-            echo "f2fs-\$(CONFIG_F2FS_IOSTAT) += iostat.o" >> "fs/f2fs/Makefile"
-          fi
-
-          sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "modules.bzl"
 
       - name: Setup fgetpriority
         if: inputs.use_fgetpriority
@@ -678,7 +605,7 @@ jobs:
             final_klv="${{ inputs.kernel_localversion }}"
             [[ "$final_klv" == -* ]] || final_klv="-$final_klv"
           else
-            suffix="-midori${{ inputs.use_susfs && '-sus' || '' }}${{ inputs.use_adios && inputs.kernel_version != '6.1' && '-adios' || '' }}${{ inputs.use_droidspaces && '-ds' || '' }}${{ inputs.use_16k_pages && '-16k' || '' }}"
+            suffix="-midori${{ inputs.use_susfs && '-sus' || '' }}${{ inputs.use_adios && '-adios' || '' }}${{ inputs.use_16k_pages && '-16k' || '' }}"
             kmi=$(grep -m1 -h -E '^[[:space:]]*KMI_GENERATION=' build.config.constants build.config.common 2>/dev/null | grep -oP '\d+' | head -n 1)
             final_klv="-${{ steps.cfg.outputs.android_version }}${kmi:+-$kmi}$suffix"
           fi
@@ -697,12 +624,8 @@ jobs:
           variant: ${{ inputs.variant }}
           enable_susfs: ${{ inputs.use_susfs }}
           localversion: ${{ steps.localversion.outputs.localversion }}
-          use_droidspaces: ${{ inputs.use_droidspaces }}
-          use_rekernel: ${{ inputs.use_rekernel }}
-          use_vpnhide: ${{ inputs.use_vpnhide }}
           use_fgetpriority: ${{ inputs.use_fgetpriority }}
           use_adios: ${{ inputs.use_adios }}
-          use_lz4_zstd: ${{ inputs.use_lz4_zstd }}
           use_16k_pages: ${{ inputs.use_16k_pages }}
           midorisu_rx_hook_mode: ${{ inputs.midorisu_rx_hook_mode }}
           midorisu_xx_hook_mode: ${{ inputs.midorisu_xx_hook_mode }}
@@ -730,30 +653,6 @@ jobs:
               git rev-parse HEAD > "$COMMIT_DIR/susfs_commit"
               git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/susfs_date"
               git remote get-url origin | grep -q "github.com" && echo "GitHub" > "$COMMIT_DIR/susfs_repo" || echo "GitLab" > "$COMMIT_DIR/susfs_repo"
-              popd > /dev/null
-            fi
-          }
-          save_rekernel_commit() {
-            if [ -d "${{ github.workspace }}/ReKernel" ]; then
-              pushd "${{ github.workspace }}/ReKernel" > /dev/null
-              git rev-parse HEAD > "$COMMIT_DIR/rekernel_commit"
-              git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/rekernel_date"
-              popd > /dev/null
-            fi
-          }
-          save_rekernel_x_commit() {
-            if [ -d "${{ github.workspace }}/ReKernel_X" ]; then
-              pushd "${{ github.workspace }}/ReKernel_X" > /dev/null
-              git rev-parse HEAD > "$COMMIT_DIR/rekernel_x_commit"
-              git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/rekernel_x_date"
-              popd > /dev/null
-            fi
-          }
-          save_vpnhide_commit() {
-            if [ "${{ inputs.use_vpnhide }}" = "true" ] && [ -d "${{ github.workspace }}/vpnhide_next" ]; then
-              pushd "${{ github.workspace }}/vpnhide_next" > /dev/null
-              git rev-parse HEAD > "$COMMIT_DIR/vpnhide_commit"
-              git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/vpnhide_date"
               popd > /dev/null
             fi
           }
@@ -803,15 +702,12 @@ jobs:
               save_susfs_commit
               ;;
           esac
-          save_rekernel_commit
-          save_rekernel_x_commit
-          save_vpnhide_commit
           save_fgetpriority_commit
 
       - name: Upload Commit Info
         uses: actions/upload-artifact@v7
         with:
-          name: commit-info-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.DS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}
+          name: commit-info-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}
           path: kernel_workspace/common/commit_info/
           retention-days: 1
 
@@ -834,7 +730,6 @@ jobs:
           export KBUILD_BUILD_TIMESTAMP="${{ inputs.build_timestamp }}"
           export KBUILD_BUILD_HOST="${{ inputs.build_host }}"
           export KBUILD_BUILD_USER="${{ inputs.build_user }}"
-          export RKX_VERSION="${RKX_VERSION}"
           export KBUILD_ABS_SRCTREE=1
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error headers
@@ -870,7 +765,7 @@ jobs:
         if: inputs.ksu_debug
         uses: actions/upload-artifact@v7
         with:
-          name: vmlinux-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.DS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.ZRAM_SUFFIX }}${{ env.PAGE_SUFFIX }}
+          name: vmlinux-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}
           path: kernel_workspace/common/out/vmlinux.zst
           retention-days: 1
 
@@ -879,7 +774,7 @@ jobs:
         run: |
           IMAGE="common/out/arch/arm64/boot/Image"
           [ -f "$IMAGE" ] || { echo "Binary Missing!"; exit 1; }
-          ZIP_NAME="${{ inputs.variant }}_Kernel-${{ inputs.kernel_version }}.${{ steps.cfg.outputs.sub_level }}${{ steps.cfg.outputs.r_suffix }}${{ env.SUSFS_SUFFIX }}${{ env.DS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.ZRAM_SUFFIX }}${{ env.PAGE_SUFFIX }}.zip"
+          ZIP_NAME="${{ inputs.variant }}_Kernel-${{ inputs.kernel_version }}.${{ steps.cfg.outputs.sub_level }}${{ steps.cfg.outputs.r_suffix }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}.zip"
           git clone --depth 1 --branch ${{ steps.cfg.outputs.anykernel_branch }} https://github.com/midori01/AnyKernel3 anykernel
           cp "$IMAGE" anykernel/
           cd anykernel && rm -rf .git && zip -r9 "../$ZIP_NAME" *

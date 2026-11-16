@@ -40,28 +40,18 @@ All kernel version-specific settings are centralized in [`.github/config/kernel_
 
 ## 📦 Build Variants
 
-| Variant | SUSFS | Droidspaces | Hook Type |
-| :--- | :---: | :---: | :--- |
-| [MidoriSU-KX](https://github.com/KOWX712/KernelSU) | ❌ | ❌ | `Kprobes` |
-| [MidoriSU-KX-DS](https://github.com/KOWX712/KernelSU) | ❌ | ✅ | `Kprobes` |
-| [MidoriSU-KX-SUSFS](https://github.com/KOWX712/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-KX-SUSFS-DS](https://github.com/KOWX712/KernelSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-NX](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | ❌ | `Tracepoint` |
-| [MidoriSU-NX-DS](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | ✅ | `Tracepoint` |
-| [MidoriSU-NX-SUSFS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-NX-SUSFS-DS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-OX](https://github.com/tiann/KernelSU) | ❌ | ❌ | `Kprobes` |
-| [MidoriSU-OX-DS](https://github.com/tiann/KernelSU) | ❌ | ✅ | `Kprobes` |
-| [MidoriSU-OX-SUSFS](https://github.com/tiann/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-OX-SUSFS-DS](https://github.com/tiann/KernelSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-RX](https://github.com/ReSukiSU/ReSukiSU) | ❌ | ❌ | `Manual` |
-| [MidoriSU-RX-DS](https://github.com/ReSukiSU/ReSukiSU) | ❌ | ✅ | `Manual` |
-| [MidoriSU-RX-SUSFS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-RX-SUSFS-DS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-XX](https://github.com/backslashxx/KernelSU) | ❌ | ❌ | `Branch Link` |
-| [MidoriSU-XX-DS](https://github.com/backslashxx/KernelSU) | ❌ | ✅ | `Branch Link` |
-| [MidoriSU-XX-SUSFS](https://github.com/backslashxx/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-XX-SUSFS-DS](https://github.com/backslashxx/KernelSU) | ✅ | ✅ | `De-inlined` |
+| Variant | SUSFS | Hook Type |
+| :--- | :---: | :--- |
+| [MidoriSU-KX](https://github.com/KOWX712/KernelSU) | ❌ | `Kprobes` |
+| [MidoriSU-KX-SUSFS](https://github.com/KOWX712/KernelSU) | ✅ | `De-inlined` |
+| [MidoriSU-NX](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | `Tracepoint` |
+| [MidoriSU-NX-SUSFS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | `De-inlined` |
+| [MidoriSU-OX](https://github.com/tiann/KernelSU) | ❌ | `Kprobes` |
+| [MidoriSU-OX-SUSFS](https://github.com/tiann/KernelSU) | ✅ | `De-inlined` |
+| [MidoriSU-RX](https://github.com/ReSukiSU/ReSukiSU) | ❌ | `Manual` |
+| [MidoriSU-RX-SUSFS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | `De-inlined` |
+| [MidoriSU-XX](https://github.com/backslashxx/KernelSU) | ❌ | `Branch Link` |
+| [MidoriSU-XX-SUSFS](https://github.com/backslashxx/KernelSU) | ✅ | `De-inlined` |
 
 > \* **MidoriSU-RX & MidoriSU-XX Hook Type:** Runtime-configurable via `midorisu_rx_hook_mode` and `midorisu_xx_hook_mode`.
 > - `midorisu_rx_hook_mode` — `manual` (default) / `tracepoint`
@@ -71,17 +61,17 @@ All kernel version-specific settings are centralized in [`.github/config/kernel_
 >   - `manual` — manually-patched hooks via `scope-min-manual-hooks-v2.3.patch`
 
 > [!TIP]
-> **Matrix Build Orchestration:** The matrix always produces exactly **1 artifact per variant** — the enabled features (Droidspaces and/or SUSFS) are applied to that single artifact. With all 5 variants selected, this yields **5 builds per sublevel for each kernel version**. Choosing `all` from the `kernel_version` dropdown compiles all configured sublevels across 6.1, 6.6 and 6.12 in parallel for a total of **40 concurrent jobs**.
+> **Matrix Build Orchestration:** The matrix always produces exactly **1 artifact per variant** — the enabled features (SUSFS) are applied to that single artifact. With all 5 variants selected, this yields **5 builds per sublevel for each kernel version**. Choosing `all` from the `kernel_version` dropdown compiles all configured sublevels across 6.1, 6.6 and 6.12 in parallel for a total of **40 concurrent jobs**.
 
 ---
 
 ## 📱 MidoriSU Manager
 
-[**MidoriSU**](https://github.com/midori01/KernelSU) is the official companion app for all MidoriSU kernel variants. Heavily customized and expanded based on [**KowSU**](https://github.com/KOWX712/KernelSU), it offers seamless out-of-the-box compatibility across the entire MidoriSU family — **KX, NX, OX, RX, XX** — including all SUSFS and Droidspaces combinations.
+[**MidoriSU**](https://github.com/midori01/KernelSU) is the official companion app for all MidoriSU kernel variants. Heavily customized and expanded based on [**KowSU**](https://github.com/KOWX712/KernelSU), it offers seamless out-of-the-box compatibility across the entire MidoriSU family — **KX, NX, OX, RX, XX** — including all SUSFS combinations.
 
 | Feature | Description |
 | :--- | :--- |
-| **Modern Bento Dashboard** | Bento-style responsive dashboard with spring press bounce feedback; dynamically displays KSU driver name (native driver & dynamic LKM detection), Roman numeral UAPI version, hook type, SUSFS version, Droidspaces version, Re:Kernel(-X) version, kernel build timestamp, and OEM unlock status. |
+| **Modern Bento Dashboard** | Bento-style responsive dashboard with spring press bounce feedback; dynamically displays KSU driver name (native driver & dynamic LKM detection), Roman numeral UAPI version, hook type, SUSFS version, kernel build timestamp, and OEM unlock status. |
 | **Built-in SUSFS Management** | Native SUSFS control panel in Kernel Tools that replaces the susfs4ksu module: SUS Path, SUS Kstat, SUS Map, and Open Redirect rules; kernel version (`uname`) and boot parameter (`/proc/cmdline` / `bootconfig`) spoofing; AVC log spoofing, SUS mount hiding, and a priority UID filter that hides selected apps from `getpriority` / `ioprio` probes. Rules are applied by `ksud` at boot (including a late-loaded SUSFS LKM), with a per-boot report, configuration backup and restore, and one-tap import from an existing susfs4ksu module. Works with both built-in SUSFS and susfs4ksu-lkm. |
 | **Dual Themes & Personalization** | Seamlessly supports both Material 3 Expressive and Miuix UI themes with live preview cards; includes a floating pill bottom navigation bar, re-tapping active tab to scroll to top, module update badges, and a built-in switcher to toggle between **MidoriSU**, **KowSU**, and **Official KernelSU** app names, icons, and splash themes. |
 | **OTA Payload & ARB Analyzer** | Instant extraction of `boot.img` from local or online OTA zip / `payload.bin` archives via HTTP Range Requests without downloading entire multi-gigabyte packages; includes built-in Anti-Rollback (ARB) index and boot kernel version analysis. |
@@ -117,12 +107,8 @@ All kernel version-specific settings are centralized in [`.github/config/kernel_
 | **Source Mirror** | Choose between Google's official AOSP mirror or a self-hosted mirror for kernel source and toolchain downloads. |
 | **SUSFS** | SUSFS kernel patches are synced from upstream automatically and generated for every supported sublevel, including pinned non-LTS revisions in `kernel_versions.json`. A single `susfs_commit` input controls SUSFS versions across variants. SUSFS is configured in MidoriSU Manager, so no separate susfs4ksu module is attached to releases. |
 | **KSU Toolkit** | Automatically fetches the latest [ksu_toolkit](https://github.com/backslashxx/ksu_toolkit) module from nightly.link and links it in the release notes. |
-| **Droidspaces** | Container support via [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) — SYSVIPC, IPC_NS, PID_NS, DEVTMPFS, NTSync, and networking. Enabled per-variant through the `use_droidspaces` toggle. |
-| **Re:Kernel(-X)** | Integrated [Re:Kernel](https://github.com/Sakion-Team/Re-Kernel) and [Re:Kernel-X](https://github.com/myflavor/ReKernel-X) modules compiled directly into the kernel. Provides tombstone freeze recovery, network-triggered unfreeze, and binder async cleanup. Toggled via `use_rekernel` switch. |
-| **VPNHide Next** | Integrated [VPNHide Next](https://github.com/soranerai/vpnhide_next_backend) via in-tree kpatch (`CONFIG_VPNHIDE=y`), hiding VPN network interfaces, routing rules, and socket descriptors at the kernel level without relying on dynamic LKM. Links the companion `vpnhide-bridge.zip` module and manager APK (`vpnhide.apk`) from their upstream releases in the release notes. Toggled via `use_vpnhide` switch. |
 | **Unicode Bypass Fix** | Always enabled. Patches kernel unicode normalization to prevent filesystem bypass attacks via non-standard unicode encodings. |
 | **ADIOS I/O Scheduler** | Optionally integrates [ADIOS](https://github.com/firelzrd/adios) as the built-in default multi-queue I/O scheduler for kernels. Enabled through the `use_adios` toggle. |
-| **LZ4/ZSTD ZRAM backends** | Optionally updates the kernel's LZ4 and ZSTD implementations from the official LZ4 1.10.0 and Zstandard 1.5.7 releases, with ZRAM backend support enabled for kernel 6.12 (only tested on 6.12.23). Controlled by the `use_lz4_zstd` toggle; 6.1 and 6.6 builds remain unchanged. |
 | **Ccache** | Compiler cache integration with a 60-second wait guard for dependency installation, ensuring robust accelerated incremental rebuilds across workflow runs. |
 | **Spoofed Build Metadata** | Customizable `kernel name`, `build timestamp`, `user`, and `host` strings for the compiled image. |
 
@@ -146,7 +132,7 @@ The following devices have been confirmed to work with kernels built by this wor
 > [!NOTE]
 > **Compatibility Notes:**
 > - All listed devices run Android 16+ with GKI kernels (6.1/6.6/6.12)
-> - SUSFS and Droidspaces features have been tested on all device families
+> - SUSFS features have been tested on all device families
 > - Users on stock ROMs are advised to flash the kernel via MidoriSU Manager or Kernel Flasher
 
 > [!TIP]

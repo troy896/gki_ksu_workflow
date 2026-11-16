@@ -40,28 +40,18 @@
 
 ## 📦 ビルドバリアント
 
-| バリアント | SUSFS | Droidspaces | フック方式 |
-| :--- | :---: | :---: | :--- |
-| [MidoriSU-KX](https://github.com/KOWX712/KernelSU) | ❌ | ❌ | `Kprobes` |
-| [MidoriSU-KX-DS](https://github.com/KOWX712/KernelSU) | ❌ | ✅ | `Kprobes` |
-| [MidoriSU-KX-SUSFS](https://github.com/KOWX712/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-KX-SUSFS-DS](https://github.com/KOWX712/KernelSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-NX](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | ❌ | `Tracepoint` |
-| [MidoriSU-NX-DS](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | ✅ | `Tracepoint` |
-| [MidoriSU-NX-SUSFS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-NX-SUSFS-DS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-OX](https://github.com/tiann/KernelSU) | ❌ | ❌ | `Kprobes` |
-| [MidoriSU-OX-DS](https://github.com/tiann/KernelSU) | ❌ | ✅ | `Kprobes` |
-| [MidoriSU-OX-SUSFS](https://github.com/tiann/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-OX-SUSFS-DS](https://github.com/tiann/KernelSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-RX](https://github.com/ReSukiSU/ReSukiSU) | ❌ | ❌ | `Manual` |
-| [MidoriSU-RX-DS](https://github.com/ReSukiSU/ReSukiSU) | ❌ | ✅ | `Manual` |
-| [MidoriSU-RX-SUSFS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-RX-SUSFS-DS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | ✅ | `De-inlined` |
-| [MidoriSU-XX](https://github.com/backslashxx/KernelSU) | ❌ | ❌ | `Branch Link` |
-| [MidoriSU-XX-DS](https://github.com/backslashxx/KernelSU) | ❌ | ✅ | `Branch Link` |
-| [MidoriSU-XX-SUSFS](https://github.com/backslashxx/KernelSU) | ✅ | ❌ | `De-inlined` |
-| [MidoriSU-XX-SUSFS-DS](https://github.com/backslashxx/KernelSU) | ✅ | ✅ | `De-inlined` |
+| バリアント | SUSFS | フック方式 |
+| :--- | :---: | :--- |
+| [MidoriSU-KX](https://github.com/KOWX712/KernelSU) | ❌ | `Kprobes` |
+| [MidoriSU-KX-SUSFS](https://github.com/KOWX712/KernelSU) | ✅ | `De-inlined` |
+| [MidoriSU-NX](https://github.com/KernelSU-Next/KernelSU-Next) | ❌ | `Tracepoint` |
+| [MidoriSU-NX-SUSFS](https://github.com/KernelSU-Next/KernelSU-Next) | ✅ | `De-inlined` |
+| [MidoriSU-OX](https://github.com/tiann/KernelSU) | ❌ | `Kprobes` |
+| [MidoriSU-OX-SUSFS](https://github.com/tiann/KernelSU) | ✅ | `De-inlined` |
+| [MidoriSU-RX](https://github.com/ReSukiSU/ReSukiSU) | ❌ | `Manual` |
+| [MidoriSU-RX-SUSFS](https://github.com/ReSukiSU/ReSukiSU) | ✅ | `De-inlined` |
+| [MidoriSU-XX](https://github.com/backslashxx/KernelSU) | ❌ | `Branch Link` |
+| [MidoriSU-XX-SUSFS](https://github.com/backslashxx/KernelSU) | ✅ | `De-inlined` |
 
 > \* **MidoriSU-RX および MidoriSU-XX のフック方式:** `midorisu_rx_hook_mode` および `midorisu_xx_hook_mode` で個別に設定可能です。
 > - `midorisu_rx_hook_mode` — `manual`（デフォルト）/ `tracepoint`
@@ -71,17 +61,17 @@
 >   - `manual` — `scope-min-manual-hooks-v2.3.patch` による手動フック
 
 > [!TIP]
-> **マトリクスビルドの仕組み:** マトリクスは常にバリアントごとに **1 つの成果物** のみを生成します。有効化した機能（Droidspaces / SUSFS）は、その単一の成果物に適用されます。5 つのバリアントすべてを選択した場合、カーネルバージョンの **各サブレベルごとに 5 つのビルド** が実行されます。`kernel_version` で `all` を選択すると、6.1 / 6.6 / 6.12 の全サブレベルが並列コンパイルされ、デフォルト設定では合計 **40 のジョブ** が同時に実行されます。
+> **マトリクスビルドの仕組み:** マトリクスは常にバリアントごとに **1 つの成果物** のみを生成します。有効化した機能（SUSFS）は、その単一の成果物に適用されます。5 つのバリアントすべてを選択した場合、カーネルバージョンの **各サブレベルごとに 5 つのビルド** が実行されます。`kernel_version` で `all` を選択すると、6.1 / 6.6 / 6.12 の全サブレベルが並列コンパイルされ、デフォルト設定では合計 **40 のジョブ** が同時に実行されます。
 
 ---
 
 ## 📱 MidoriSU マネージャー
 
-[**MidoriSU**](https://github.com/midori01/KernelSU) は、MidoriSU 全カーネルバリアント対応の公式コンパニオンアプリです。[**KowSU**](https://github.com/KOWX712/KernelSU) をベースに大幅な独自拡張を施しており、**KX、NX、OX、RX、XX** の全バリアント、および SUSFS / Droidspaces の全組み合わせにシームレスに対応します。
+[**MidoriSU**](https://github.com/midori01/KernelSU) は、MidoriSU 全カーネルバリアント対応の公式コンパニオンアプリです。[**KowSU**](https://github.com/KOWX712/KernelSU) をベースに大幅な独自拡張を施しており、**KX、NX、OX、RX、XX** の全バリアント、および SUSFS の全組み合わせにシームレスに対応します。
 
 | 機能 | 説明 |
 | :--- | :--- |
-| **モダンな Bento ダッシュボード** | 弾むようなプレスフィードバックを備えた弁当スタイルのレスポンシブダッシュボード。KSU ドライバ名（ネイティブ名および LKM 動的検出）、ローマ数字 UAPI バージョン、フックタイプ、SUSFS バージョン、Droidspaces バージョン、Re:Kernel(-X) バージョン、カーネルビルド時刻、OEM ロック解除状態を一目で確認可能。 |
+| **モダンな Bento ダッシュボード** | 弾むようなプレスフィードバックを備えた弁当スタイルのレスポンシブダッシュボード。KSU ドライバ名（ネイティブ名および LKM 動的検出）、ローマ数字 UAPI バージョン、フックタイプ、SUSFS バージョン、カーネルビルド時刻、OEM ロック解除状態を一目で確認可能。 |
 | **内蔵 SUSFS 管理** | susfs4ksu モジュールに代わる、カーネルツール内蔵の SUSFS コントロールパネル。SUS Path / SUS Kstat / SUS Map / Open Redirect ルール、カーネルバージョン（`uname`）と起動パラメータ（`/proc/cmdline` / `bootconfig`）の偽装、AVC ログ偽装、SUS マウントの隠蔽、指定アプリを `getpriority` / `ioprio` による検出から隠す優先度 UID フィルタに対応。ルールは起動時に `ksud` が自動適用し（後から読み込まれる SUSFS LKM にも対応）、起動ごとの適用レポート、設定のバックアップ／復元、既存の susfs4ksu モジュールからのワンタップ移行も可能です。カーネル内蔵 SUSFS と susfs4ksu-lkm の両方で動作します。 |
 | **デュアルテーマと外観カスタマイズ** | Material 3 Expressive と Miuix の両 UI スタイルおよびリアルタイムプレビューに完全対応。Material 向けフローティングピル型ボトムナビゲーション、タブ再タップによるトップへのスムーズスクロール、モジュール更新バッジ、さらに **MidoriSU**、**KowSU**、**公式 KernelSU** のアプリ名・アイコン・起動画面テーマの即時切り替えを搭載。 |
 | **OTA Payload 抽出と ARB 解析** | ローカルまたはオンラインの OTA ZIP / `payload.bin` から `boot.img` を秒速抽出。HTTP Range Request により大容量パッケージ全体をダウンロードすることなく直接抽出可能。アンチロールバック（ARB）インデックスおよびブートカーネルバージョンの解析機能を内蔵。 |
@@ -117,12 +107,8 @@
 | **ソースミラー** | カーネルソースおよびツールチェーンの取得先として、Google 公式の AOSP ミラー、またはセルフホストミラーを選択可能です。 |
 | **SUSFS** | SUSFS カーネルパッチは上流から自動同期され、`kernel_versions.json` で固定した非 LTS リビジョンを含む、サポート対象の全サブレベル向けに生成されます。全バリアントの SUSFS バージョンは単一の `susfs_commit` 入力で一元管理されます。SUSFS は MidoriSU マネージャーで直接設定するため、リリースに susfs4ksu モジュールは同梱されません。 |
 | **KSU ツールキット** | 最新の [ksu_toolkit](https://github.com/backslashxx/ksu_toolkit) モジュールを nightly.link から自動取得し、リリースノートにダウンロードリンクを記載します。 |
-| **Droidspaces** | [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) を利用したコンテナ対応。SYSVIPC、IPC_NS、PID_NS、DEVTMPFS、NTSync、ネットワーク機能を提供します。`use_droidspaces` トグルでバリアントごとに有効化できます。 |
-| **Re:Kernel(-X)** | [Re:Kernel](https://github.com/Sakion-Team/Re-Kernel) および [Re:Kernel-X](https://github.com/myflavor/ReKernel-X) モジュールをカーネルに直接組み込みます。tombstone によるフリーズ復旧、ネットワークトリガーによる解除、binder 非同期クリーンアップを提供します。`use_rekernel` スイッチで制御します。 |
-| **VPNHide Next** | In-tree kpatch（`CONFIG_VPNHIDE=y`）を介して [VPNHide Next](https://github.com/soranerai/vpnhide_next_backend) を統合し、動的 LKM に依存することなくカーネルレベルで VPN ネットワークインターフェース、ルーティングルール、ソケット記述子を隠蔽します。付属の `vpnhide-bridge.zip` モジュールおよびマネージャー APK（`vpnhide.apk`）の上流ダウンロードリンクをリリースノートに記載します。`use_vpnhide` スイッチで制御します。 |
 | **Unicode バイパス修正** | 常に有効です。非標準の Unicode エンコーディングを用いたファイルシステムバイパス攻撃を防ぐため、カーネルの Unicode 正規化処理にパッチを適用します。 |
 | **ADIOS I/O スケジューラ** | [ADIOS](https://github.com/firelzrd/adios) をカーネル内蔵のデフォルト・マルチキュー I/O スケジューラとして統合します。`use_adios` スイッチで制御します。 |
-| **LZ4/ZSTD ZRAM バックエンド** | オプションでカーネルの LZ4 と ZSTD 実装を公式 LZ4 1.10.0 および Zstandard 1.5.7 に更新し、kernel 6.12 (6.12.23でのみテスト済み) の ZRAM バックエンドを有効化します。`use_lz4_zstd` トグルで制御し、6.1 および 6.6 ビルドは変更されません。 |
 | **Ccache** | 依存関係のインストール完了後に 60 秒間の待機プロセスを設けることでコンパイラキャッシュを安全に統合。ワークフロー実行をまたいだ、安定かつ堅牢な増分ビルドの高速化を実現します。 |
 | **ビルドメタデータのカスタマイズ** | コンパイル済みイメージに埋め込む `カーネル名`、`ビルド日時`、`ユーザー名`、`ホスト名` を任意に設定できます。 |
 
@@ -146,7 +132,7 @@
 > [!NOTE]
 > **互換性について**
 > - 記載の端末はいずれも Android 16 以降・GKI カーネル（6.1/6.6/6.12）環境で動作しています
-> - SUSFS / Droidspaces は全シリーズで検証済みです
+> - SUSFS は全シリーズで検証済みです
 > - 純正 ROM をご利用の場合は、MidoriSU マネージャーもしくは Kernel Flasher からの書き込みを推奨します
 
 > [!TIP]
