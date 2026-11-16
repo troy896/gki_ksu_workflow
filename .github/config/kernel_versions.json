@@ -3,18 +3,7 @@
     "android_version": "android14",
     "default_sub_level": "177",
     "use_lts": true,
-    "revisions": {
-      "177": {
-        "asb_date": "177",
-        "default_r": "r01",
-        "supported_r": [
-          "r01",
-          "none"
-        ],
-        "commit": "96e155eb3eb42b62ad42e04673b065997967dba7",
-        "commit_date": "2026-10-15 07:50:51 +0000"
-      }
-    },
+    "revisions": {},
     "default_clang": "r487747c",
     "rust": false,
     "mirror_tag": "source-6.1",
