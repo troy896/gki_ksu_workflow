@@ -478,6 +478,6 @@ index 13dbb405dc31f..814bed9f9ab1f 100644
 +#define PME_TIMEOUT 4000 /* How long between PME checks */
  
  /*
-  * Following exit from Conventional Reset, devices must be ready within 1 sec
+  * Devices may extend the 1 sec period through Request Retry Status
 -- 
 2.55.0
