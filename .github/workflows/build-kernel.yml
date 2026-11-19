@@ -464,7 +464,7 @@ jobs:
       - name: Apply CVE Fixes
         working-directory: kernel_workspace/common
         run: |
-          for cve in 43499 64560; do
+          for cve in 43499 64560 98260; do
             if bash "${{ github.workspace }}/.github/scripts/check_cve.sh" $cve > /dev/null 2>&1; then
               echo "CVE-2026-$cve fix already present."
               echo "CVE_${cve}_FIXED=true" >> $GITHUB_ENV
@@ -522,7 +522,8 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           git clone --filter=blob:none https://github.com/aerath-stuff/fgetpriority.git fgetpriority
-          FGP_TAG=$(git -C fgetpriority describe --tags $(git -C fgetpriority rev-list --tags -n 1)) && git -C fgetpriority checkout "tags/$FGP_TAG"
+          # git clone --filter=blob:none https://github.com/aerath-stuff/fgetpriority.git fgetpriority
+          # FGP_TAG=$(git -C fgetpriority describe --tags $(git -C fgetpriority rev-list --tags -n 1)) && git -C fgetpriority checkout "tags/$FGP_TAG"
           ln -sfn ../fgetpriority/kernel drivers/fgetpriority
           grep -q "fgetpriority" drivers/Makefile || echo 'obj-$(CONFIG_FGETPRIORITY) += fgetpriority/' >> drivers/Makefile
           grep -q "drivers/fgetpriority/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/fgetpriority/Kconfig"' drivers/Kconfig
@@ -568,6 +569,7 @@ jobs:
           mkdir -p "$COMMIT_DIR"
           echo "${CVE_43499_FIXED:-false}" > "$COMMIT_DIR/cve_43499_fixed_${{ inputs.kernel_version }}.${{ inputs.sub_level }}"
           echo "${CVE_64560_FIXED:-false}" > "$COMMIT_DIR/cve_64560_fixed_${{ inputs.kernel_version }}.${{ inputs.sub_level }}"
+          echo "${CVE_98260_FIXED:-false}" > "$COMMIT_DIR/cve_98260_fixed_${{ inputs.kernel_version }}.${{ inputs.sub_level }}"
           if [ "${{ inputs.variant }}" = "FinaSU" ]; then
             cd FinaSU
           else
