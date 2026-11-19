@@ -221,8 +221,7 @@ jobs:
                 continue
               fi
               asb_date=$(echo "$config" | jq -r '.revisions["'$rev'"].asb_date')
-              # Only build the LTS revision (skip pinned ASB revisions such as 177)
-              if [ "$asb_date" != "lts" ]; then
+              if [ "$use_lts" = "false" ] && [ "$asb_date" = "lts" ]; then
                 continue
               fi
               sub_levels_to_build="$sub_levels_to_build $rev"
