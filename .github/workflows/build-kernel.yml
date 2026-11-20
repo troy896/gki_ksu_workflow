@@ -311,6 +311,10 @@ jobs:
           sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' common/BUILD.bazel || true
           sed -i '/kmi_symbol_list_strict_mode/d' common/BUILD.bazel || true
 
+      - name: Apply TCP BBRv3
+        working-directory: kernel_workspace/common
+        run: patch --batch --forward --fuzz=0 -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bbrv3.patch"
+
       - name: Setup KernelSU
         working-directory: kernel_workspace/common
         run: |
@@ -664,6 +668,8 @@ jobs:
           export KBUILD_BUILD_USER="${{ inputs.build_user }}"
           export KBUILD_ABS_SRCTREE=1
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig
+          grep -Fxq 'CONFIG_TCP_CONG_BBR=y' out/.config
+          grep -Fxq 'CONFIG_TCP_CONG_BBR3=y' out/.config
           make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error headers
           if [ "${{ inputs.variant }}" = "FinaSU" ]; then
             make -j$(nproc) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error KSU_EXPECTED_HASH=2d89b50aaf1db013c2b6738f973f48b62ea21a3a8d7216bfec3521065d448458 KSU_EXPECTED_SIZE=0x2cc KSU_REQUIRE_PREINIT=1 Image
