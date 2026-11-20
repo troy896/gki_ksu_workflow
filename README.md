@@ -110,6 +110,7 @@ All kernel version-specific settings are centralized in [`.github/config/kernel_
 | **Unicode Bypass Fix** | Always enabled. Patches kernel unicode normalization to prevent filesystem bypass attacks via non-standard unicode encodings. |
 | **ADIOS I/O Scheduler** | Optionally integrates [ADIOS](https://github.com/firelzrd/adios) as the built-in default multi-queue I/O scheduler for kernels. Enabled through the `use_adios` toggle. |
 | **Ccache** | Compiler cache integration with a 60-second wait guard for dependency installation, ensuring robust accelerated incremental rebuilds across workflow runs. |
+| **ADIOS I/O Scheduler** | Optionally integrates [ADIOS](https://github.com/firelzrd/adios) as the built-in default multi-queue I/O scheduler for kernels. Controlled by the `use_adios` toggle. The separate `build_adios_module` toggle attaches the ADIOS module to 6.6 and 6.12 releases: it loads ADIOS as an LKM on kernels without it (such as stock kernels with LKM-mode KernelSU), only manages scheduler selection when ADIOS is built in, and switches the default scheduler from its WebUI or Action button. The system scheduler is kept until another one is chosen. |
 | **Spoofed Build Metadata** | Customizable `kernel name`, `build timestamp`, `user`, and `host` strings for the compiled image. |
 
 ---
