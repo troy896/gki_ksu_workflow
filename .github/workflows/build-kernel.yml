@@ -492,13 +492,8 @@ jobs:
       - name: Apply Other Patches
         working-directory: kernel_workspace/common
         run: |
-          # patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/android14-6.1/bbrv3hard.patch"
+          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
-          if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
-            patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0002-net-tcp-bbr3-add-debugfs-diagnostics-and-runtime-tunables.patch"
-          fi
-          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/0003-net-tcp-bbr3-own-the-private-ctx-per-socket-5.10-6.6.patch"
           
       - name: Apply libbpf glibc 2.43 Fix
         working-directory: kernel_workspace/common
@@ -517,9 +512,6 @@ jobs:
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/adios3.3.0.patch"
           patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
-          if [ "${{ inputs.variant }}" != "FinaSU" ]; then
-            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
-          fi
 
       - name: Setup fgetpriority
         if: inputs.use_fgetpriority
