@@ -730,3 +730,12 @@ jobs:
         with:
           path: kernel_workspace/${{ env.ZIP_NAME }}
           archive: false
+
+      - name: Upload Patch Reject Files
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: patch-rejects-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.variant }}${{ inputs.use_susfs && '-susfs' || '' }}${{ inputs.use_adios && '-adios' || '' }}${{ inputs.use_16k_pages && '-16k' || '' }}
+          path: kernel_workspace/common/**/*.rej
+          if-no-files-found: ignore
+          retention-days: 7
