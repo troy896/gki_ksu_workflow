@@ -335,7 +335,6 @@ jobs:
       always() &&
       !cancelled() &&
       inputs.build_adios_module &&
-      inputs.kernel_version != '6.1' &&
       needs.setup.result == 'success'
     uses: ./.github/workflows/build-adios-module.yml
     with:
@@ -405,7 +404,7 @@ jobs:
           skip-decompress: true
 
       - uses: actions/download-artifact@v8
-        if: matrix.kv != '6.1' && needs.adios_module.result == 'success'
+        if: needs.adios_module.result == 'success'
         with:
           pattern: 'ADIOS_Module-*'
           path: release_zips
