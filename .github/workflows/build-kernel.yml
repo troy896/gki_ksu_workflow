@@ -513,6 +513,13 @@ jobs:
         run: |
           python3 "${{ github.workspace }}/.github/scripts/fix_pcm_wait_time.py"
 
+      - name: Apply Other Patches
+        if: inputs.kernel_version == '6.1' && (inputs.sub_level == '177' || inputs.sub_level == '182')
+        working-directory: kernel_workspace/common
+        run: |
+          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
+          patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
+
       - name: Apply ADIOS I/O Scheduler,BORE, and NoMount
         if: inputs.use_adios
         working-directory: kernel_workspace/common
