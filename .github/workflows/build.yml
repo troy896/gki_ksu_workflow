@@ -100,6 +100,11 @@ on:
         required: true
         default: true
         type: boolean
+      use_nomount:
+        description: 'NoMount'
+        required: true
+        default: true
+        type: boolean
       use_extra_features:
         description: 'Extra Features & Fixes'
         required: true
@@ -303,7 +308,7 @@ jobs:
           echo "build_matrix=$matrix" >> $GITHUB_OUTPUT
 
   build:
-    name: "${{ matrix.kernel_version }}.${{ matrix.sub_level }} - ${{ matrix.variant }}${{ matrix.susfs && ' (SUSFS)' || '' }}${{ inputs.use_adios && ' (ADIOS)' || '' }}${{ inputs.use_16k_pages && ' (16KB)' || '' }}"
+    name: "${{ matrix.kernel_version }}.${{ matrix.sub_level }} - ${{ matrix.variant }}${{ matrix.susfs && ' (SUSFS)' || '' }}${{ inputs.use_adios && ' (ADIOS)' || '' }}${{ inputs.use_16k_pages && ' (16KB)' || '' }}${{ inputs.use_nomount && matrix.variant != 'FinaSU' && ' (NM)' || '' }}"
     needs: setup
     if: |
       always() &&
@@ -319,6 +324,7 @@ jobs:
       sub_level: ${{ matrix.sub_level }}
       variant: ${{ matrix.variant }}
       use_fgetpriority: ${{ inputs.use_fgetpriority }}
+      use_nomount: ${{ inputs.use_nomount && matrix.variant != 'FinaSU' }}
       use_adios: ${{ inputs.use_adios }}
       use_16k_pages: ${{ inputs.use_16k_pages }}
       bbrv3_patch_177_182: ${{ inputs.bbrv3_patch_177_182 }}
@@ -449,7 +455,7 @@ jobs:
           echo "KSUD_VERSION=$(echo "$apk" | grep -oP '\d+(?=-release\.apk$)' || echo "unknown")" >> $GITHUB_ENV
 
       - name: Resolve NoMount Module Link
-        if: inputs.enable_susfs == true
+        if: inputs.use_nomount == true && inputs.ksu_variant != 'FinaSU'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -512,6 +518,13 @@ jobs:
             local date=$(cat "${file%_commit}_date")
             out "fgetpriority_line=- **${label}**: [\`$(echo $sha | cut -c1-7)\`](https://github.com/aerath-stuff/fgetpriority/commit/$sha) \`$date\`"
           }
+          nomount_line() {
+            local label=$1 file=$2
+            [ -f "$file" ] || return 0
+            local sha=$(cat "$file")
+            local date=$(cat "${file%_commit}_date")
+            out "nomount_line=- **${label}**: [\`$(echo $sha | cut -c1-7)\`](https://github.com/maxsteeel/nomount/commit/$sha) \`$date\`"
+          }
           if [ -f "commit_info/susfs_commit" ]; then
             sha=$(cat commit_info/susfs_commit)
             out "susfs_commit=\`$(short_sha commit_info/susfs_commit)\`"
@@ -536,6 +549,7 @@ jobs:
             out "driver_version=$(cat commit_info/driver_version)"
           fi
           fgetpriority_line "fgetpriority" commit_info/fgetpriority_commit
+          nomount_line "NoMount" commit_info/nomount_commit
           ksu_line MidoriSU-KX "$(cat commit_info/midorisu_kx_ksu_repo 2>/dev/null)" commit_info/midorisu_kx_ksu_commit
           ksu_line MidoriSU-NX "$(cat commit_info/midorisu_nx_ksu_repo 2>/dev/null)" commit_info/midorisu_nx_ksu_commit
           ksu_line MidoriSU-OX "$(cat commit_info/midorisu_ox_ksu_repo 2>/dev/null)" commit_info/midorisu_ox_ksu_commit
@@ -557,6 +571,7 @@ jobs:
             ${{ steps.ksu_info.outputs.midorisu-xx }}
             ${{ steps.ksu_info.outputs.susfs_url && format('- **SUSFS4KSU**: [{0}]({1}) {2}', steps.ksu_info.outputs.susfs_commit, steps.ksu_info.outputs.susfs_url, steps.ksu_info.outputs.susfs_date) || '' }}
             ${{ steps.ksu_info.outputs.fgetpriority_line }}
+            ${{ steps.ksu_info.outputs.nomount_line }}
             - **KSU Driver**: `${{ steps.ksu_info.outputs.driver_version || env.KSUD_VERSION }}`　**KSU Daemon (ksud)**: `${{ env.KSUD_VERSION }}`
             - **Manager**: `${{ env.MIDORISU_APK }}`
             > **Spoofed Kernel Build Info**
@@ -571,7 +586,7 @@ jobs:
             - **IPSET**: ✅　**Enhanced NAT**: ✅
             - **TCP BBRv1 / BBRv3**: ✅${{ env.TCPCC_MODULE_LINK && format(' ({0})', env.TCPCC_MODULE_LINK) || '' }}
             - **KSU Toolkit**: ${{ env.TOOLKIT_LINK && format('✅ ({0})', env.TOOLKIT_LINK) || '❌' }}
-            - **NoMount**: ${{ env.NOMOUNT_LINKS && format('✅ ({0})', env.NOMOUNT_LINKS) || (inputs.use_nomount && '✅' || '❌') }}
+            - **NoMount**: ${{ env.NOMOUNT_LINKS && format('✅ ({0})', env.NOMOUNT_LINKS) || (inputs.use_nomount && inputs.ksu_variant != 'FinaSU' && '✅' || '❌') }}
             - **Compiler**: `clang-${{ env.CLANG_VERSION }}`${{ env.RUST_VERSION && format('　**Rust**: `{0}`', env.RUST_VERSION) || '' }}
           files: |
             release_zips/*.zip

@@ -16,6 +16,10 @@ on:
         required: false
         type: boolean
         default: true
+      use_nomount:
+        required: false
+        type: boolean
+        default: true
       use_extra_features:
         required: false
         type: boolean
@@ -144,6 +148,7 @@ jobs:
       SUSFS_SUFFIX: ${{ inputs.use_susfs && '-SUSFS' || '' }}
       ADIOS_SUFFIX: ${{ inputs.use_adios && '-ADIOS' || '' }}
       PAGE_SUFFIX: ${{ inputs.use_16k_pages && '-16K' || '' }}
+      NM_SUFFIX: ${{ inputs.use_nomount && inputs.variant != 'FinaSU' && '-NM' || '' }}
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_COMPILERCHECK: content
       CCACHE_SLOPPINESS: file_macro,time_macros,include_file_mtime,include_file_ctime,pch_defines,modules
@@ -213,7 +218,7 @@ jobs:
         id: ccache-key
         run: |
           group="ccache_${{ inputs.kernel_version }}_${{ inputs.use_susfs && 'susfs' || 'nosusfs' }}"
-          combo="${group}_${{ inputs.variant }}${{ inputs.use_adios && '.adios' || '' }}${{ inputs.use_16k_pages && '.16k' || '' }}${{ inputs.use_nomount && '.nm' || '' }}"
+          combo="${group}_${{ inputs.variant }}${{ inputs.use_adios && '.adios' || '' }}${{ inputs.use_16k_pages && '.16k' || '' }}${{ inputs.use_nomount && inputs.variant != 'FinaSU' && '.nm' || '' }}"
           sub="${combo}_${{ steps.cfg.outputs.sub_level }}"
           rev="${sub}_${{ steps.cfg.outputs.asb_date }}${{ steps.cfg.outputs.r_suffix }}"
           echo "key=${rev}_${{ github.run_id }}" >> $GITHUB_OUTPUT
@@ -520,15 +525,12 @@ jobs:
           patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
           patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
 
-      - name: Apply ADIOS I/O Scheduler,BORE, and NoMount
+      - name: Apply ADIOS I/O Scheduler & BORE
         if: inputs.use_adios
         working-directory: kernel_workspace/common
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/adios3.3.0.patch"
           patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
-          if [ "${{ inputs.variant }}" != "FinaSU" ]; then
-            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
-          fi
 
       - name: Setup fgetpriority
         if: inputs.use_fgetpriority
@@ -541,6 +543,15 @@ jobs:
           grep -q "fgetpriority" drivers/Makefile || echo 'obj-$(CONFIG_FGETPRIORITY) += fgetpriority/' >> drivers/Makefile
           grep -q "drivers/fgetpriority/Kconfig" drivers/Kconfig || sed -i '/endmenu/i source "drivers/fgetpriority/Kconfig"' drivers/Kconfig
 
+      - name: Setup NoMount
+        if: inputs.use_nomount && inputs.variant != 'FinaSU'
+        working-directory: kernel_workspace/common
+        run: |
+          git clone --filter=blob:none -b master https://github.com/maxsteeel/nomount.git NoMount
+          ln -sfn ../NoMount/kernel/src fs/nomount
+          grep -q "nomount" fs/Makefile || echo 'obj-$(CONFIG_NOMOUNT) += nomount/' >> fs/Makefile
+          grep -q "fs/nomount/Kconfig" fs/Kconfig || { awk '{a[NR]=$0} /^endmenu/{l=NR} END{for(i=1;i<=NR;i++){if(i==l)print "source \"fs/nomount/Kconfig\"";print a[i]}}' fs/Kconfig > fs/Kconfig.tmp && mv fs/Kconfig.tmp fs/Kconfig; }
+
       - name: Determine Kernel Localversion
         id: localversion
         working-directory: kernel_workspace/common
@@ -549,7 +560,7 @@ jobs:
             final_klv="${{ inputs.kernel_localversion }}"
             [[ "$final_klv" == -* ]] || final_klv="-$final_klv"
           else
-            suffix="-midori${{ inputs.use_susfs && '-sus' || '' }}${{ inputs.use_adios && '-adios' || '' }}${{ inputs.use_16k_pages && '-16k' || '' }}"
+            suffix="-midori${{ inputs.use_susfs && '-sus' || '' }}${{ inputs.use_adios && '-adios' || '' }}${{ inputs.use_16k_pages && '-16k' || '' }}${{ inputs.use_nomount && inputs.variant != 'FinaSU' && '-nomount' || '' }}"
             kmi=$(grep -m1 -h -E '^[[:space:]]*KMI_GENERATION=' build.config.constants build.config.common 2>/dev/null | grep -oP '\d+' | head -n 1)
             final_klv="-${{ steps.cfg.outputs.android_version }}${kmi:+-$kmi}$suffix"
           fi
@@ -569,6 +580,7 @@ jobs:
           enable_susfs: ${{ inputs.use_susfs }}
           localversion: ${{ steps.localversion.outputs.localversion }}
           use_fgetpriority: ${{ inputs.use_fgetpriority }}
+          use_nomount: ${{ inputs.use_nomount && inputs.variant != 'FinaSU' }}
           use_adios: ${{ inputs.use_adios }}
           use_16k_pages: ${{ inputs.use_16k_pages }}
           midorisu_rx_hook_mode: ${{ inputs.midorisu_rx_hook_mode }}
@@ -606,6 +618,14 @@ jobs:
               pushd "${{ github.workspace }}/kernel_workspace/common/fgetpriority" > /dev/null
               git rev-parse HEAD > "$COMMIT_DIR/fgetpriority_commit"
               git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/fgetpriority_date"
+              popd > /dev/null
+            fi
+          }
+          save_nomount_commit() {
+            if [ "${{ inputs.use_nomount }}" = "true" ] && [ "${{ inputs.variant }}" != "FinaSU" ] && [ -d "${{ github.workspace }}/kernel_workspace/common/NoMount" ]; then
+              pushd "${{ github.workspace }}/kernel_workspace/common/NoMount" > /dev/null
+              git rev-parse HEAD > "$COMMIT_DIR/nomount_commit"
+              git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M %z' HEAD > "$COMMIT_DIR/nomount_date"
               popd > /dev/null
             fi
           }
@@ -648,11 +668,12 @@ jobs:
               ;;
           esac
           save_fgetpriority_commit
+          save_nomount_commit
 
       - name: Upload Commit Info
         uses: actions/upload-artifact@v7
         with:
-          name: commit-info-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}
+          name: commit-info-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}${{ env.NM_SUFFIX }}
           path: kernel_workspace/common/commit_info/
           retention-days: 1
 
@@ -712,7 +733,7 @@ jobs:
         if: inputs.ksu_debug
         uses: actions/upload-artifact@v7
         with:
-          name: vmlinux-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}
+          name: vmlinux-${{ inputs.kernel_version }}-${{ inputs.sub_level }}-${{ inputs.variant }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}${{ env.NM_SUFFIX }}
           path: kernel_workspace/common/out/vmlinux.zst
           retention-days: 1
 
@@ -721,7 +742,7 @@ jobs:
         run: |
           IMAGE="common/out/arch/arm64/boot/Image"
           [ -f "$IMAGE" ] || { echo "Binary Missing!"; exit 1; }
-          ZIP_NAME="${{ inputs.variant }}_Kernel-${{ inputs.kernel_version }}.${{ steps.cfg.outputs.sub_level }}${{ steps.cfg.outputs.r_suffix }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}.zip"
+          ZIP_NAME="${{ inputs.variant }}_Kernel-${{ inputs.kernel_version }}.${{ steps.cfg.outputs.sub_level }}${{ steps.cfg.outputs.r_suffix }}${{ env.SUSFS_SUFFIX }}${{ env.ADIOS_SUFFIX }}${{ env.PAGE_SUFFIX }}${{ env.NM_SUFFIX }}.zip"
           git clone --depth 1 --branch ${{ steps.cfg.outputs.anykernel_branch }} https://github.com/midori01/AnyKernel3 anykernel
           cp "$IMAGE" anykernel/
           cd anykernel && rm -rf .git && zip -r9 "../$ZIP_NAME" *
@@ -758,7 +779,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: patch-rejects-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.variant }}${{ inputs.use_susfs && '-susfs' || '' }}${{ inputs.use_adios && '-adios' || '' }}${{ inputs.use_16k_pages && '-16k' || '' }}
+          name: patch-rejects-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.variant }}${{ inputs.use_susfs && '-susfs' || '' }}${{ inputs.use_adios && '-adios' || '' }}${{ inputs.use_16k_pages && '-16k' || '' }}${{ inputs.use_nomount && inputs.variant != 'FinaSU' && '-nm' || '' }}
           path: kernel_workspace/common/**/*.rej
           if-no-files-found: ignore
           retention-days: 7
