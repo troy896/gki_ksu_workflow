@@ -230,11 +230,6 @@ jobs:
               if [ "$rev" -lt 177 ]; then
                 continue
               fi
-              asb_date=$(echo "$config" | jq -r '.revisions["'$rev'"].asb_date')
-              # Only build the LTS revision (skip pinned ASB revisions such as 177)
-              if [ "$asb_date" != "lts" ]; then
-                continue
-              fi
               sub_levels_to_build="$sub_levels_to_build $rev"
             done
             sub_levels_to_build=$(echo "$sub_levels_to_build" | tr ' ' '\n' | sort -n | uniq | tr '\n' ' ')

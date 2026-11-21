@@ -25,12 +25,12 @@ else
   esac
 fi
 
-# Ensure kernel_versions.json only retains 6.1 with the pinned 177 tag revision and the LTS revision
-PINNED_SUB=177
+# Ensure kernel_versions.json retains 6.1 revisions >= 177 and the LTS revision
+MIN_SUB=177
 if [ -f "$CONFIG_FILE" ]; then
-  jq --argjson pinned "$PINNED_SUB" '
+  jq --argjson min_sub "$MIN_SUB" '
     with_entries(select(.key == "6.1")) |
-    .["6.1"].revisions |= with_entries(select((.key | tonumber) == $pinned or .value.asb_date == "lts"))
+    .["6.1"].revisions |= with_entries(select((.key | tonumber) >= $min_sub or .value.asb_date == "lts"))
   ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
 fi
 
