@@ -488,12 +488,6 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           patch -p1 < "${{ github.workspace }}/.github/patches/unicode_bypass_fix_6.1++.patch"
-
-      - name: Apply Other Patches
-        working-directory: kernel_workspace/common
-        run: |
-          patch -p1 --fuzz=3 < "${{ github.workspace }}/.github/patches/test.patch"
-          patch -p1 < "${{ github.workspace }}/.github/patches/opt.patch"
           
       - name: Apply libbpf glibc 2.43 Fix
         working-directory: kernel_workspace/common
