@@ -513,12 +513,15 @@ jobs:
         run: |
           python3 "${{ github.workspace }}/.github/scripts/fix_pcm_wait_time.py"
 
-      - name: Apply ADIOS I/O Scheduler & BORE
+      - name: Apply ADIOS I/O Scheduler,BORE, and NoMount
         if: inputs.use_adios
         working-directory: kernel_workspace/common
         run: |
           patch -p1 --forward --fuzz=3 < "${{ github.workspace }}/.github/patches/android14-6.1/adios3.3.0.patch"
           patch -p1 --ignore-whitespace -F3 < "${{ github.workspace }}/.github/patches/android14-6.1/bore_6.1.patch"
+          if [ "${{ inputs.variant }}" != "FinaSU" ]; then
+            curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -s master
+          fi
 
       - name: Setup fgetpriority
         if: inputs.use_fgetpriority
