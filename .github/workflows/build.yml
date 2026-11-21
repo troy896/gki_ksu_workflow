@@ -82,8 +82,8 @@ on:
         required: true
         default: true
         type: boolean
-      use_lz4_zstd:
-        description: 'LZ4/ZSTD ZRAM (6.12.23 only)'
+      use_16k_pages:
+        description: '16KB Page Size'
         required: true
         default: false
         type: boolean
