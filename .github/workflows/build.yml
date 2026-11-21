@@ -82,6 +82,14 @@ on:
         required: true
         default: true
         type: boolean
+      bbrv3_patch_177_182:
+        description: 'BBRv3 Patch (6.1.177 & 6.1.182 only)'
+        required: true
+        default: 'bbrv3'
+        type: choice
+        options:
+          - bbrv3
+          - bbrv3hard
       use_16k_pages:
         description: '16KB Page Size'
         required: true
@@ -309,6 +317,7 @@ jobs:
       use_fgetpriority: ${{ inputs.use_fgetpriority }}
       use_adios: ${{ inputs.use_adios }}
       use_16k_pages: ${{ inputs.use_16k_pages }}
+      bbrv3_patch_177_182: ${{ inputs.bbrv3_patch_177_182 }}
       use_extra_features: ${{ inputs.use_extra_features }}
       use_susfs: ${{ matrix.susfs }}
       source_mirror: ${{ inputs.source_mirror }}

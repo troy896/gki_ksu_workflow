@@ -78,6 +78,10 @@ on:
         required: false
         type: boolean
         default: false
+      bbrv3_patch_177_182:
+        required: false
+        type: string
+        default: 'bbrv3'
       susfs_commit:
         required: false
         type: string
@@ -315,7 +319,11 @@ jobs:
         working-directory: kernel_workspace/common
         run: |
           if [ "${{ inputs.kernel_version }}" = "6.1" ] && { [ "${{ inputs.sub_level }}" = "177" ] || [ "${{ inputs.sub_level }}" = "182" ]; }; then
-            patch --batch --forward --fuzz=0 -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bbrv3-177-182.patch"
+            if [ "${{ inputs.bbrv3_patch_177_182 }}" = "bbrv3hard" ]; then
+              patch --batch --forward --fuzz=0 -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bbrv3hard-177-182.patch"
+            else
+              patch --batch --forward --fuzz=0 -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bbrv3-177-182.patch"
+            fi
           else
             patch --batch --forward --fuzz=0 -p1 < "${{ github.workspace }}/.github/patches/${{ steps.cfg.outputs.kmi_version }}/bbrv3.patch"
           fi
